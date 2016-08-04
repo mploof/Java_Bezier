@@ -126,4 +126,9 @@ public class Pair {
         return new Pair(-this.x(), -this.y());
     }
 
+    public String toString() {
+        String ret = this.x + ", " + this.y;
+        return ret;
+    }
+
 }
