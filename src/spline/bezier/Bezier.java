@@ -21,7 +21,6 @@ public class Bezier extends Model {
     private int              nextY;
 
     public Bezier() {
-        throw new UnsupportedOperationException();
     }
 
     public List<Span> getSpans() {
@@ -49,7 +48,7 @@ public class Bezier extends Model {
         nextY = 0;
 
         // Fill the point count list with empty pairs
-        int ptCount = (PTS_PER_SPAN - 1) * knotCount + 1;
+        int ptCount = (PTS_PER_SPAN - 1) * spanCount + 1;
         for (int i = 0; i < ptCount; i++) {
             ctrlPts.add(new Pair());
         }
@@ -74,7 +73,7 @@ public class Bezier extends Model {
     private void initSpans() {
 
         // Don't initialize the spans till all the control points have been set
-        if (nextX != ctrlPts.size() && nextY != ctrlPts.size())
+        if (nextX != ctrlPts.size() || nextY != ctrlPts.size())
             return;
 
         /**
@@ -101,10 +100,10 @@ public class Bezier extends Model {
             // Create the new span and add it to the list
             Span newSpan = new Span(spanPts, prevSpan);
             spans.add(newSpan);
-        }
+        }     
     }
 
-    float positionAtX(float x) {
+    public float positionAtX(float x) {
         Span thisSpan = spanContainingX(x);
         if (thisSpan != null)
             return thisSpan.positionAtX(x);
@@ -112,7 +111,7 @@ public class Bezier extends Model {
             return ERROR;
     }
 
-    float velocityAtX(float x) {
+    public float velocityAtX(float x) {
         Span thisSpan = spanContainingX(x);
         if (thisSpan != null)
             return thisSpan.velocityAtX(x);
@@ -120,7 +119,7 @@ public class Bezier extends Model {
             return ERROR;
     }
 
-    float accelAtX(float x) {
+    public float accelAtX(float x) {
         Span thisSpan = spanContainingX(x);
         if (thisSpan != null)
             return thisSpan.accelAtX(x);
@@ -128,7 +127,7 @@ public class Bezier extends Model {
             return ERROR;
     }
 
-    Span spanContainingX(float x) {
+    private Span spanContainingX(float x) {
         for (int i = 0; i < spans.size(); i++) {
             if (spans.get(i).containsX(x)) {
                 return spans.get(i);
