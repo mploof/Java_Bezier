@@ -3,6 +3,12 @@ package spline.bezier;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.geom.CubicCurve2D;
+import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,17 +17,66 @@ import spline.mvc.View;
 
 public class BezierUI extends View {
     List<Pair> splinePts = new ArrayList<Pair>();
+    List<Pair> ctrlPts   = new ArrayList<Pair>();
+    List<Pair> sp        = new ArrayList<Pair>();
     int        minX, maxX, minY, maxY;
     boolean    scaled;
     int        curvePtCount;
+    Bezier     model;
+    final int  PT_RAD    = 5;
+    int        selectedPt;
 
     BezierUI() {
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (selectedPt < 0)
+                    return;
+                else {
+                    Pair thisPt = new Pair(e.getX(), e.getY());
+                    sp.set(selectedPt, thisPt);
+                    repaint();
+                }
+            }
+        });
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                selectedPt = onCtrlPt(e);
+                System.out.println("Selected point " + selectedPt);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent arg0) {
+                ctrlPts.clear();
+                for (Pair p : sp) {
+                    ctrlPts.add(unscalePoint(p));
+                }
+                model.setCtrlPts(ctrlPts);
+                selectedPt = -1;
+            }
+        });
         scaled = false;
         curvePtCount = 200;
-        minX = 0;
-        maxX = 100;
-        minY = 0;
-        maxY = 100;
+        minX = -10;
+        maxX = 110;
+        minY = -10;
+        maxY = 110;
+        selectedPt = -1;
+    }
+
+    private int onCtrlPt(MouseEvent e) {
+        double dist;
+        int index = 0;
+        for (Pair p : ctrlPts) {
+            Pair ps = scalePoint(p);
+            dist = Math.sqrt(Math.pow((e.getX() - ps.x()), 2) + Math.pow((e.getY() - ps.y()), 2));
+            if (dist <= PT_RAD) {
+                return index;
+            }
+            index++;
+        }
+        return -1;
     }
 
     public int getMinX() {
@@ -68,13 +123,27 @@ public class BezierUI extends View {
         return maxY - minY;
     }
 
+    Pair scalePoint(Pair p) {
+        double x = (p.x() - minX) / rangeX() * this.getWidth();
+        double y = (1.0 - (p.y() - minY) / rangeY()) * this.getHeight();
+        return new Pair(x, y);
+    }
+
+    Pair unscalePoint(Pair p) {
+        double x = p.x() / this.getWidth() * rangeX() + minX;
+        double y = (1.0 - p.y() / this.getHeight()) * rangeY() + minY;
+        return new Pair(x, y);
+    }
+
     @Override
     public void update() {
-        Bezier model = (Bezier) super.getModel();
+        model = (Bezier) super.getModel();
         if (scaled)
             splinePts = model.getScaledCurvePoints(curvePtCount);
-        else
+        else {
             splinePts = model.getCurvePoints(curvePtCount);
+            ctrlPts = model.getCtrlPts();
+        }
         repaint();
     }
 
@@ -82,6 +151,8 @@ public class BezierUI extends View {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setColor(Color.BLACK);
 
         if (splinePts.size() < 2)
@@ -101,32 +172,68 @@ public class BezierUI extends View {
         // ...otherwise fit the values to the display range
         else {
             for (Pair p : splinePts) {
-                double x = (p.x() - minX) / rangeX() * this.getWidth();
-                double y = (1.0 - (p.y() - minY) / rangeY()) * this.getHeight();
-                paintPts.add(new Pair(x, y));
+                paintPts.add(scalePoint(p));
             }
         }
 
-        Pair p0 = paintPts.get(0);
-        Pair p1 = paintPts.get(1);
+        // // Paint the spline points
+        // Pair p0 = paintPts.get(0);
+        // Pair p1 = paintPts.get(1);
+        //
+        // for (Pair p : paintPts) {
+        // System.out.println(p);
+        // }
+        //
+        // for (int i = 1; i < splinePts.size(); i++) {
+        // int x1 = (int) Math.round(p0.x());
+        // int y1 = (int) Math.round(p0.y());
+        // int x2 = (int) Math.round(p1.x());
+        // int y2 = (int) Math.round(p1.y());
+        // g2.drawLine(x1, y1, x2, y2);
+        //
+        // if (i < splinePts.size() - 1) {
+        // p0 = p1;
+        // p1 = paintPts.get(i + 1);
+        // }
+        // }
 
-        for (Pair p : paintPts) {
-            System.out.println(p);
-        }
+        // If this isn't a scaled curve, paint the control points
+        if (!scaled) {
 
-        for (int i = 1; i < splinePts.size(); i++) {
-            int x1 = (int) Math.round(p0.x());
-            int y1 = (int) Math.round(p0.y());
-            int x2 = (int) Math.round(p1.x());
-            int y2 = (int) Math.round(p1.y());
-            g2.drawLine(x1, y1, x2, y2);
+            // If not point is selected, update from the model
+            if (selectedPt == -1) {
+                sp = new ArrayList<Pair>(); // The scaled control points
+                for (Pair p : ctrlPts) {
+                    Pair ps = scalePoint(p);
+                    sp.add(ps);
+                }
+            }
 
-            if (i < splinePts.size() - 1) {
-                p0 = p1;
-                p1 = paintPts.get(i + 1);
+            for (Pair p : sp) {
+                int dia = PT_RAD * 2;
+                g2.draw(new Ellipse2D.Double(p.x() - PT_RAD, p.y() - PT_RAD, dia, dia));
+            }
+
+            int spanCount = model.getSpans().size();
+            final int SPAN_INC = 3;
+            for (int i = 0; i < spanCount; i++) {
+                // create new CubicCurve2D.Double
+                CubicCurve2D c = new CubicCurve2D.Double();
+                // draw CubicCurve2D.Double with set coordinates
+                double x0 = sp.get(0 + SPAN_INC * i).x();
+                double y0 = sp.get(0 + SPAN_INC * i).y();
+                double x1 = sp.get(1 + SPAN_INC * i).x();
+                double y1 = sp.get(1 + SPAN_INC * i).y();
+                double x2 = sp.get(2 + SPAN_INC * i).x();
+                double y2 = sp.get(2 + SPAN_INC * i).y();
+                double x3 = sp.get(3 + SPAN_INC * i).x();
+                double y3 = sp.get(3 + SPAN_INC * i).y();
+                c.setCurve(x0, y0, x1, y1, x2, y2, x3, y3);
+                g2.draw(c);
             }
         }
 
+        // Draw a border around everything
         g2.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
     }
 

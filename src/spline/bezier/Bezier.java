@@ -32,7 +32,16 @@ public class Bezier extends Model {
     }
 
     public Bezier(List<Pair> ctrlPts) {
-        throw new UnsupportedOperationException();
+        setCtrlPts(ctrlPts);
+    }
+
+    public void setCtrlPts(List<Pair> ctrlPts) {
+        this.ctrlPts = ctrlPts;
+        this.spanCount = (ctrlPts.size() - 1) / (PTS_PER_SPAN - 1);
+        this.knotCount = spanCount + 1;
+        nextX = ctrlPts.size();
+        nextY = ctrlPts.size();
+        initSpans();
     }
 
     public void init(List<Pair> ctrlPts, int knotCount) {
@@ -86,6 +95,9 @@ public class Bezier extends Model {
                                   // new span (last point of span n should ==
                                   // first point of span n+1)
 
+        // The control points might be reinitialized at some point, so clear any
+        // existing spans
+        spans.clear();
         for (int i = 0; i < spanCount; i++) {
 
             // If this is the first span, set the previous span to null
@@ -176,6 +188,10 @@ public class Bezier extends Model {
 
     Span getSpan(int which) {
         return spans.get(which);
+    }
+
+    List<Pair> getCtrlPts() {
+        return ctrlPts;
     }
 
     /**
