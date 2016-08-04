@@ -94,7 +94,7 @@ public class Bezier extends Model {
             // Extract the proper subset of control points for this span
             Pair[] spanPts = new Pair[SPAN_PT_CT];
             for (int j = 0; j < SPAN_PT_CT; j++) {
-                spanPts[j] = ctrlPts.get(i * INC);
+                spanPts[j] = ctrlPts.get(j + i * INC);
             }
 
             // Create the new span and add it to the list
