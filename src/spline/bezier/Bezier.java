@@ -8,7 +8,7 @@ import spline.mvc.Model;
 
 public class Bezier extends Model {
 
-    private double            ERROR        = -1e6f;
+    private double           ERROR        = -1e6f;
 
     private int              spanIdGen    = 0;
     private List<Span>       spans        = new ArrayList<Span>();
@@ -100,7 +100,9 @@ public class Bezier extends Model {
             // Create the new span and add it to the list
             Span newSpan = new Span(spanPts, prevSpan);
             spans.add(newSpan);
-        }     
+        }
+
+        super.notifyObservers();
     }
 
     public double positionAtX(double x) {
@@ -136,36 +138,107 @@ public class Bezier extends Model {
         return null;
     }
 
-    double startX() {
+    double getStartX() {
         if (spans.size() != 0)
-            return spans.get(spans.size() - 1).startX();
+            return spans.get(spans.size() - 1).getStartX();
         else
             return 0f;
     }
 
-    double stopX() {
+    double getStopX() {
         if (spans.size() != 0)
-            return spans.get(spans.size() - 1).stopX();
+            return spans.get(spans.size() - 1).getStopX();
         else
             return 0f;
     }
 
-    double startY() {
+    double getRangeX() {
+        return getStopX() - getStartX();
+    }
+
+    double getRangeY() {
+        return getMaxY() - getMinY();
+    }
+
+    double getStartY() {
         if (spans.size() != 0)
-            return spans.get(spans.size() - 1).startY();
+            return spans.get(spans.size() - 1).getStartY();
         else
             return 0f;
     }
 
-    double stopY() {
+    double getStopY() {
         if (spans.size() != 0)
-            return spans.get(spans.size() - 1).stopY();
+            return spans.get(spans.size() - 1).getStopY();
         else
             return 0f;
     }
 
     Span getSpan(int which) {
         return spans.get(which);
+    }
+
+    /**
+     * 
+     * @param points
+     *            The number of points equally spaced along the X axis to
+     *            represent the curve
+     * @return
+     *         A list of points representing all segments of the initialized
+     *         Bezier curve
+     */
+    public List<Pair> getCurvePoints(int points) {
+        List<Pair> ret = new ArrayList<Pair>();
+
+        double increment = getStopX() / points;
+        for (int i = 0; i <= points; i++) {
+            double x = i * increment;
+            double y = positionAtX(x);
+            ret.add(new Pair(x, y));
+        }
+        return ret;
+    }
+
+    public List<Pair> getScaledCurvePoints(int points) {
+        List<Pair> pts = getCurvePoints(points);
+        double minX = getStartX();
+        double rangeX = getStopX() - minX;
+        double minY = getMinY();
+        double rangeY = getMaxY() - minY;
+
+        int signX = minX > 0 ? -1 : 1;
+        int signY = minY > 0 ? -1 : 1;
+
+        for (Pair p : pts) {
+            // Move the X start and min Y values to 0
+            p.x(p.x() + minX * signX);
+            p.y(p.y() + minY * signY);
+
+            // Scale the values based on the spline range
+            p.x(p.x() / rangeX);
+            p.y(p.y() / rangeY);
+        }
+        return pts;
+    }
+
+    private double getMinY() {
+        double ret = 0;
+        for (Span s : spans) {
+            double val = s.getMinY();
+            if (val < ret)
+                ret = val;
+        }
+        return ret;
+    }
+
+    private double getMaxY() {
+        double ret = 0;
+        for (Span s : spans) {
+            double val = s.getMaxY();
+            if (val > ret)
+                ret = val;
+        }
+        return ret;
     }
 
     private class Span {
@@ -180,6 +253,7 @@ public class Bezier extends Model {
         private Pair             coeffD;
         private int              recursionIndex;
         private Pair[]           ctrlPts      = new Pair[4];
+        private final static int SEARCH_COUNT = 500;
 
         /**
          * Default constructor
@@ -225,6 +299,8 @@ public class Bezier extends Model {
 
         public void setPrevSpan(Span prevSpan) {
             this.prevSpan = prevSpan;
+            if (prevSpan != null)
+                prevSpan.setNextSpan(this);
         }
 
         private void setCoeffs() {
@@ -316,41 +392,63 @@ public class Bezier extends Model {
         }
 
         public boolean containsX(double x) {
-            if (x >= startX() && x <= stopX())
+            if (x >= this.getStartX() && x <= this.getStopX())
                 return true;
             else
                 return false;
         }
 
         public boolean containsY(double y) {
-            if (startY() <= y && y <= stopY())
+            if (getStartY() <= y && y <= getStopY())
                 return true;
             else
                 return false;
         }
 
-        public double startX() {
+        public double getStartX() {
             return ctrlPts[0].x();
         }
 
-        public double stopX() {
+        public double getStopX() {
             return ctrlPts[MAX_CTRL_PTS - 1].x();
         }
 
-        public double rangeX() {
-            return stopX() - startX();
+        public double getMinY() {
+            double inc = getRangeX() / SEARCH_COUNT;
+            double ret = 0;
+            for (int i = 0; i <= SEARCH_COUNT; i++) {
+                double pos = positionAtX(i * inc);
+                if (pos < ret)
+                    ret = pos;
+            }
+            return ret;
         }
 
-        public double startY() {
+        public double getMaxY() {
+            double inc = getRangeX() / SEARCH_COUNT;
+            double ret = 0;
+            for (int i = 0; i <= SEARCH_COUNT; i++) {
+                double pos = positionAtX(i * inc);
+                if (pos > ret)
+                    ret = pos;
+            }
+            return ret;
+        }
+
+        public double getRangeX() {
+            return this.getStopX() - this.getStartX();
+        }
+
+        public double getStartY() {
             return ctrlPts[0].y();
         }
 
-        public double stopY() {
+        public double getStopY() {
             return ctrlPts[MAX_CTRL_PTS - 1].y();
         }
 
-        public double rangeY() {
-            return stopY() - startY();
+        public double getRangeY() {
+            return this.getStopY() - this.getStartY();
         }
 
         double positionAtX(double x) {
