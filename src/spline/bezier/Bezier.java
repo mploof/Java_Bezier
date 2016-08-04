@@ -8,7 +8,7 @@ import spline.mvc.Model;
 
 public class Bezier extends Model {
 
-    private float            ERROR        = -1e6f;
+    private double            ERROR        = -1e6f;
 
     private int              spanIdGen    = 0;
     private List<Span>       spans        = new ArrayList<Span>();
@@ -58,13 +58,13 @@ public class Bezier extends Model {
         return knotCount;
     }
 
-    public void setNextX(float x) {
+    public void setNextX(double x) {
         ctrlPts.get(nextX).x(x);
         nextX++;
         initSpans();
     }
 
-    public void setNextY(float y) {
+    public void setNextY(double y) {
         ctrlPts.get(nextY).y(y);
         nextY++;
         initSpans();
@@ -103,7 +103,7 @@ public class Bezier extends Model {
         }     
     }
 
-    public float positionAtX(float x) {
+    public double positionAtX(double x) {
         Span thisSpan = spanContainingX(x);
         if (thisSpan != null)
             return thisSpan.positionAtX(x);
@@ -111,7 +111,7 @@ public class Bezier extends Model {
             return ERROR;
     }
 
-    public float velocityAtX(float x) {
+    public double velocityAtX(double x) {
         Span thisSpan = spanContainingX(x);
         if (thisSpan != null)
             return thisSpan.velocityAtX(x);
@@ -119,7 +119,7 @@ public class Bezier extends Model {
             return ERROR;
     }
 
-    public float accelAtX(float x) {
+    public double accelAtX(double x) {
         Span thisSpan = spanContainingX(x);
         if (thisSpan != null)
             return thisSpan.accelAtX(x);
@@ -127,7 +127,7 @@ public class Bezier extends Model {
             return ERROR;
     }
 
-    private Span spanContainingX(float x) {
+    private Span spanContainingX(double x) {
         for (int i = 0; i < spans.size(); i++) {
             if (spans.get(i).containsX(x)) {
                 return spans.get(i);
@@ -136,28 +136,28 @@ public class Bezier extends Model {
         return null;
     }
 
-    float startX() {
+    double startX() {
         if (spans.size() != 0)
             return spans.get(spans.size() - 1).startX();
         else
             return 0f;
     }
 
-    float stopX() {
+    double stopX() {
         if (spans.size() != 0)
             return spans.get(spans.size() - 1).stopX();
         else
             return 0f;
     }
 
-    float startY() {
+    double startY() {
         if (spans.size() != 0)
             return spans.get(spans.size() - 1).startY();
         else
             return 0f;
     }
 
-    float stopY() {
+    double stopY() {
         if (spans.size() != 0)
             return spans.get(spans.size() - 1).stopY();
         else
@@ -245,17 +245,17 @@ public class Bezier extends Model {
             coeffD = ctrlPts[0];
         }
 
-        public float solveCubic(float val, boolean isX) {
+        public double solveCubic(double val, boolean isX) {
             return solveCubic(val, isX, 0);
         }
 
-        public float solveCubic(float t, boolean isX, float offset) {
-            float ret;
+        public double solveCubic(double t, boolean isX, double offset) {
+            double ret;
             int which = isX ? 0 : 1;
 
             // P(t) = At^3 + Bt^2 + Ct + D
             // Calculate via Horner's rule
-            float term = t;
+            double term = t;
             ret = coeffD.getVal(which) - offset;
             ret += term * coeffC.getVal(which);
             term *= t;
@@ -266,13 +266,13 @@ public class Bezier extends Model {
 
         }
 
-        public float solveCubicPrime(float t, boolean isX) {
-            float ret;
+        public double solveCubicPrime(double t, boolean isX) {
+            double ret;
             int which = isX ? 0 : 1;
 
             // P'(t) = 3At^2 + 2Bt + C
             // Calculate via Horner's rule
-            float term = t;
+            double term = t;
             ret = coeffC.getVal(which);
             ret += term * coeffB.getVal(which) * 2;
             term *= t;
@@ -280,27 +280,27 @@ public class Bezier extends Model {
             return ret;
         }
 
-        public float solveCubicDoublePrime(float t, boolean isX) {
-            float ret;
+        public double solveCubicDoublePrime(double t, boolean isX) {
+            double ret;
             int which = isX ? 0 : 1;
 
             // P'(t) = 6At + 2B
-            float term = t;
+            double term = t;
             ret = 6 * coeffA.getVal(which) * term + 2 * coeffB.getVal(which);
             return ret;
         }
 
-        public float tOfX(float x, float guess, int recursionLimit) {
+        public double tOfX(double x, double guess, int recursionLimit) {
             if (x == 0)
                 return 0f;
 
-            float convergenceThreshold = 1.5e-5f;
+            double convergenceThreshold = 1.5e-5f;
 
             // Find f(guess) and f'(guess)
-            float fOfGuess = solveCubic(guess, true, x);
-            float fPrimeOfGuess = solveCubicPrime(guess, true);
+            double fOfGuess = solveCubic(guess, true, x);
+            double fPrimeOfGuess = solveCubicPrime(guess, true);
             // Newton's method
-            float newGuess = guess - (fOfGuess / fPrimeOfGuess);
+            double newGuess = guess - (fOfGuess / fPrimeOfGuess);
             recursionIndex++;
             // Return when close enough or exceeding recursion limit
             if (Math.abs(newGuess - guess) < convergenceThreshold || recursionIndex == recursionLimit) {
@@ -315,56 +315,56 @@ public class Bezier extends Model {
             }
         }
 
-        public boolean containsX(float x) {
+        public boolean containsX(double x) {
             if (x >= startX() && x <= stopX())
                 return true;
             else
                 return false;
         }
 
-        public boolean containsY(float y) {
+        public boolean containsY(double y) {
             if (startY() <= y && y <= stopY())
                 return true;
             else
                 return false;
         }
 
-        public float startX() {
+        public double startX() {
             return ctrlPts[0].x();
         }
 
-        public float stopX() {
+        public double stopX() {
             return ctrlPts[MAX_CTRL_PTS - 1].x();
         }
 
-        public float rangeX() {
+        public double rangeX() {
             return stopX() - startX();
         }
 
-        public float startY() {
+        public double startY() {
             return ctrlPts[0].y();
         }
 
-        public float stopY() {
+        public double stopY() {
             return ctrlPts[MAX_CTRL_PTS - 1].y();
         }
 
-        public float rangeY() {
+        public double rangeY() {
             return stopY() - startY();
         }
 
-        float positionAtX(float x) {
-            float t = tOfX(x, 0.5f, 15);
+        double positionAtX(double x) {
+            double t = tOfX(x, 0.5f, 15);
             return solveCubic(t, false);
         };
 
-        float velocityAtX(float x) {
-            float t = tOfX(x, 0.5f, 15);
+        double velocityAtX(double x) {
+            double t = tOfX(x, 0.5f, 15);
             return solveCubicPrime(t, false);
         };
 
-        float accelAtX(float p_x) {
-            float t = tOfX(p_x, 0.5f, 15);
+        double accelAtX(double p_x) {
+            double t = tOfX(p_x, 0.5f, 15);
             return solveCubicDoublePrime(t, false);
         };
 

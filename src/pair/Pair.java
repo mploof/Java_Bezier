@@ -1,35 +1,35 @@
 package pair;
 
 public class Pair {
-    private float x;
-    private float y;
+    private double x;
+    private double y;
 
     public Pair() {
 
     }
 
-    public Pair(float x, float y) {
+    public Pair(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
-    public float x() {
+    public double x() {
         return x;
     }
 
-    public void x(float x) {
+    public void x(double x) {
         this.x = x;
     }
 
-    public float y() {
+    public double y() {
         return y;
     }
 
-    public void y(float y) {
+    public void y(double y) {
         this.y = y;
     }
 
-    public float getVal(int which) {
+    public double getVal(int which) {
         if (which == 0) {
             return this.x;
         }
@@ -41,7 +41,7 @@ public class Pair {
         }
     }
 
-    public void setVal(float val, int which) {
+    public void setVal(double val, int which) {
         if (which == 0) {
             this.x = val;
         }
@@ -66,7 +66,7 @@ public class Pair {
         return new Pair((a.x() + b.x()), (a.y() + b.y()));
     }
 
-    public static Pair add(Pair a, float val) {
+    public static Pair add(Pair a, double val) {
         return new Pair(a.x() + val, a.y() + val);
     }
 
@@ -83,7 +83,7 @@ public class Pair {
         return new Pair((a.x() - b.x()), (a.y() - b.y()));
     }
 
-    public static Pair sub(Pair a, float val) {
+    public static Pair sub(Pair a, double val) {
         return new Pair(a.x() - val, a.y() - val);
     }
 
@@ -100,7 +100,7 @@ public class Pair {
         return new Pair((a.x() * b.x()), (a.y() * b.y()));
     }
 
-    public static Pair mult(Pair a, float val) {
+    public static Pair mult(Pair a, double val) {
         return new Pair(a.x() * val, a.y() * val);
     }
 
@@ -118,7 +118,7 @@ public class Pair {
         return new Pair((dividend.x() / divisor.x()), (dividend.y() / divisor.y()));
     }
 
-    public static Pair divide(Pair a, float val) {
+    public static Pair divide(Pair a, double val) {
         return new Pair(a.x() / val, a.y() / val);
     }
 
