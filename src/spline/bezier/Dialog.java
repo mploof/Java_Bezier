@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -12,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import math.geom2d.Point2D;
 import net.miginfocom.swing.MigLayout;
 
 public class Dialog extends JDialog {
@@ -42,12 +45,14 @@ public class Dialog extends JDialog {
      * Create the dialog.
      */
     public Dialog() {
+
+        graph = new BezierUI();
+
         setBounds(100, 100, 555, 466);
         getContentPane().setLayout(new BorderLayout());
         contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         getContentPane().add(contentPanel, BorderLayout.CENTER);
         {
-            initBezier();
             contentPanel.setLayout(new MigLayout("", "[50][][424px,grow]", "[grow][][50]"));
             {
                 JPanel panel = new JPanel();
@@ -141,38 +146,22 @@ public class Dialog extends JDialog {
         }
 
         // Setup the text fields
-        minXField.setText(Integer.toString(graph.getMinX()));
-        maxXField.setText(Integer.toString(graph.getMaxX()));
-        minYField.setText(Integer.toString(graph.getMinY()));
-        maxYField.setText(Integer.toString(graph.getMaxY()));
-    }
-
-    private void initBezier() {
-        bezier = new Bezier();
-        graph = new BezierUI();
-        bezier.registerObserver(graph);
+        minXField.setText(Integer.toString(graph.minX()));
+        maxXField.setText(Integer.toString(graph.maxX()));
+        minYField.setText(Integer.toString(graph.minY()));
+        maxYField.setText(Integer.toString(graph.maxY()));
     }
 
     private void defineBezier() {
-
-        bezier.setKnotCount(3);
-        bezier.setNextX(0);
-        bezier.setNextX(10f);
-        bezier.setNextX(20f);
-        bezier.setNextX(50f);
-
-        bezier.setNextX(60f);
-        bezier.setNextX(70f);
-        bezier.setNextX(100f);
-
-        bezier.setNextY(0f);
-        bezier.setNextY(75f);
-        bezier.setNextY(25f);
-        bezier.setNextY(50f);
-
-        bezier.setNextY(10f);
-        bezier.setNextY(30f);
-        bezier.setNextY(100f);
+        List<Point2D> ctrlPts = new ArrayList<Point2D>();
+        ctrlPts.add(new Point2D(0, 0));
+        ctrlPts.add(new Point2D(15, 15));
+        ctrlPts.add(new Point2D(30, 30));
+        ctrlPts.add(new Point2D(45, 45));
+        ctrlPts.add(new Point2D(60, 60));
+        ctrlPts.add(new Point2D(75, 75));
+        ctrlPts.add(new Point2D(80, 80));
+        bezier = new Bezier(ctrlPts, graph);
     }
 
 }

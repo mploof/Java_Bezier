@@ -12,15 +12,40 @@ public class Bezier extends Model {
 
     private int              spanIdGen    = 0;
     private List<Span>       spans        = new ArrayList<Span>();
-    private List<Point2D>    ctrlPts      = new ArrayList<Point2D>();
+    private List<CtrlPt>     ctrlPts      = new ArrayList<CtrlPt>();
     private int              knotCount;
     private int              spanCount;
     private final static int PTS_PER_SPAN = 4;
 
     private int              nextX;
     private int              nextY;
+    private AbstractBezierUI view;
 
     public Bezier() {
+        this.view = null;
+        this.ctrlPts = null;
+    }
+
+    public Bezier(List<Point2D> ctrlPts) {
+        setCtrlPts(ctrlPts);
+        this.view = null;
+    }
+
+    public Bezier(AbstractBezierUI view) {
+        this.view = view;
+        this.ctrlPts = null;
+    }
+
+    public Bezier(List<Point2D> ctrlPts, AbstractBezierUI view) {
+        setCtrlPts(ctrlPts);
+        this.view = view;
+    }
+
+    public void setView(AbstractBezierUI view) {
+        this.view = view;
+        for(CtrlPt p : ctrlPts){
+            p.set
+        }
     }
 
     public List<Span> getSpans() {
@@ -31,20 +56,17 @@ public class Bezier extends Model {
         this.spans = spans;
     }
 
-    public Bezier(List<Point2D> ctrlPts) {
-        setCtrlPts(ctrlPts);
-    }
-
-    public void setCtrlPts(List<Point2D> ctrlPts) {
-        this.ctrlPts = ctrlPts;
+    public void setCtrlPts(List<Point2D> ctrlPtVals) {
+        for (Point2D p : ctrlPtVals) {
+            ctrlPts.add(new CtrlPt(p, view));
+        }
         this.spanCount = (ctrlPts.size() - 1) / (PTS_PER_SPAN - 1);
         this.knotCount = spanCount + 1;
         nextX = ctrlPts.size();
         nextY = ctrlPts.size();
-        initSpans();
     }
 
-    public void init(List<Point2D> ctrlPts, int knotCount) {
+    public void init(List<CtrlPt> ctrlPts, int knotCount) {
         this.ctrlPts = ctrlPts;
         this.knotCount = knotCount;
         this.spanCount = knotCount - 1;
@@ -59,7 +81,7 @@ public class Bezier extends Model {
         // Fill the point count list with empty pairs
         int ptCount = (PTS_PER_SPAN - 1) * spanCount + 1;
         for (int i = 0; i < ptCount; i++) {
-            ctrlPts.add(new Point2D());
+            ctrlPts.add(new CtrlPt(view));
         }
     }
 
@@ -68,15 +90,17 @@ public class Bezier extends Model {
     }
 
     public void setNextX(double x) {
-        double y = ctrlPts.get(nextX).getY();
-        ctrlPts.set(nextX, new Point2D(x, y));
+        CtrlPt p = ctrlPts.get(nextX);
+        double y = p.getVal().y();
+        p.setVal(new Point2D(x, y));
         nextX++;
         initSpans();
     }
 
     public void setNextY(double y) {
-        double x = ctrlPts.get(nextY).getX();
-        ctrlPts.set(nextY, new Point2D(x, y));
+        CtrlPt p = ctrlPts.get(nextY);
+        double x = p.getVal().x();
+        p.setVal(new Point2D(x, y));
         nextY++;
         initSpans();
     }
@@ -106,7 +130,7 @@ public class Bezier extends Model {
             Span prevSpan = i == 0 ? null : spans.get(i - 1);
 
             // Extract the proper subset of control points for this span
-            Point2D[] spanPts = new Point2D[SPAN_PT_CT];
+            CtrlPt[] spanPts = new CtrlPt[SPAN_PT_CT];
             for (int j = 0; j < SPAN_PT_CT; j++) {
                 spanPts[j] = ctrlPts.get(j + i * INC);
             }
@@ -192,7 +216,7 @@ public class Bezier extends Model {
         return spans.get(which);
     }
 
-    List<Point2D> getCtrlPts() {
+    List<CtrlPt> getCtrlPts() {
         return ctrlPts;
     }
 
@@ -294,11 +318,13 @@ public class Bezier extends Model {
          *            attached. If this is the first span in a Bezier, set
          *            prevSpan to null.
          */
-        public Span(Point2D[] ctrlPts, Span prevSpan) {
+        public Span(CtrlPt[] ctrlPts, Span prevSpan) {
             id = spanIdGen++;
             recursionIndex = 0;
             this.nextSpan = null;
-            this.ctrlPts = ctrlPts;
+            for (int i = 0; i < ctrlPts.length; i++) {
+                this.ctrlPts[i] = ctrlPts[i].getVal();
+            }
             setPrevSpan(prevSpan);
             setCoeffs();
         }
