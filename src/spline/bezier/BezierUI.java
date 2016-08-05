@@ -12,19 +12,19 @@ import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import pair.Pair;
+import math.geom2d.Point2D;
 import spline.mvc.View;
 
 public class BezierUI extends View {
-    List<Pair> splinePts = new ArrayList<Pair>();
-    List<Pair> ctrlPts   = new ArrayList<Pair>();
-    List<Pair> sp        = new ArrayList<Pair>();
-    int        minX, maxX, minY, maxY;
-    boolean    scaled;
-    int        curvePtCount;
-    Bezier     model;
-    final int  PT_RAD    = 5;
-    int        selectedPt;
+    List<Point2D> splinePts = new ArrayList<Point2D>();
+    List<Point2D> ctrlPts   = new ArrayList<Point2D>();
+    List<Point2D> sp        = new ArrayList<Point2D>();
+    int           minX, maxX, minY, maxY;
+    boolean       scaled;
+    int           curvePtCount;
+    Bezier        model;
+    final int     PT_RAD    = 5;
+    int           selectedPt;
 
     BezierUI() {
         addMouseMotionListener(new MouseMotionAdapter() {
@@ -33,7 +33,7 @@ public class BezierUI extends View {
                 if (selectedPt < 0)
                     return;
                 else {
-                    Pair thisPt = new Pair(e.getX(), e.getY());
+                    Point2D thisPt = new Point2D(e.getX(), e.getY());
                     sp.set(selectedPt, thisPt);
                     repaint();
                 }
@@ -49,7 +49,7 @@ public class BezierUI extends View {
             @Override
             public void mouseReleased(MouseEvent arg0) {
                 ctrlPts.clear();
-                for (Pair p : sp) {
+                for (Point2D p : sp) {
                     ctrlPts.add(unscalePoint(p));
                 }
                 model.setCtrlPts(ctrlPts);
@@ -68,8 +68,8 @@ public class BezierUI extends View {
     private int onCtrlPt(MouseEvent e) {
         double dist;
         int index = 0;
-        for (Pair p : ctrlPts) {
-            Pair ps = scalePoint(p);
+        for (Point2D p : ctrlPts) {
+            Point2D ps = scalePoint(p);
             dist = Math.sqrt(Math.pow((e.getX() - ps.x()), 2) + Math.pow((e.getY() - ps.y()), 2));
             if (dist <= PT_RAD) {
                 return index;
@@ -123,16 +123,16 @@ public class BezierUI extends View {
         return maxY - minY;
     }
 
-    Pair scalePoint(Pair p) {
+    Point2D scalePoint(Point2D p) {
         double x = (p.x() - minX) / rangeX() * this.getWidth();
         double y = (1.0 - (p.y() - minY) / rangeY()) * this.getHeight();
-        return new Pair(x, y);
+        return new Point2D(x, y);
     }
 
-    Pair unscalePoint(Pair p) {
+    Point2D unscalePoint(Point2D p) {
         double x = p.x() / this.getWidth() * rangeX() + minX;
         double y = (1.0 - p.y() / this.getHeight()) * rangeY() + minY;
-        return new Pair(x, y);
+        return new Point2D(x, y);
     }
 
     @Override
@@ -159,28 +159,28 @@ public class BezierUI extends View {
             return;
 
         // Re-scale the spline to fit the window
-        List<Pair> paintPts = new ArrayList<Pair>();
+        List<Point2D> paintPts = new ArrayList<Point2D>();
 
         // If starting with scaled values, fit to the window...
         if (scaled) {
-            for (Pair p : splinePts) {
+            for (Point2D p : splinePts) {
                 double x = p.x() * this.getWidth();
                 double y = (1.0 - p.y()) * this.getHeight();
-                paintPts.add(new Pair(x, y));
+                paintPts.add(new Point2D(x, y));
             }
         }
         // ...otherwise fit the values to the display range
         else {
-            for (Pair p : splinePts) {
+            for (Point2D p : splinePts) {
                 paintPts.add(scalePoint(p));
             }
         }
 
         // // Paint the spline points
-        // Pair p0 = paintPts.get(0);
-        // Pair p1 = paintPts.get(1);
+        // Point2D p0 = paintPts.get(0);
+        // Point2D p1 = paintPts.get(1);
         //
-        // for (Pair p : paintPts) {
+        // for (Point2D p : paintPts) {
         // System.out.println(p);
         // }
         //
@@ -202,14 +202,14 @@ public class BezierUI extends View {
 
             // If not point is selected, update from the model
             if (selectedPt == -1) {
-                sp = new ArrayList<Pair>(); // The scaled control points
-                for (Pair p : ctrlPts) {
-                    Pair ps = scalePoint(p);
+                sp = new ArrayList<Point2D>(); // The scaled control points
+                for (Point2D p : ctrlPts) {
+                    Point2D ps = scalePoint(p);
                     sp.add(ps);
                 }
             }
 
-            for (Pair p : sp) {
+            for (Point2D p : sp) {
                 int dia = PT_RAD * 2;
                 g2.draw(new Ellipse2D.Double(p.x() - PT_RAD, p.y() - PT_RAD, dia, dia));
             }
@@ -222,10 +222,13 @@ public class BezierUI extends View {
                 // draw CubicCurve2D.Double with set coordinates
                 double x0 = sp.get(0 + SPAN_INC * i).x();
                 double y0 = sp.get(0 + SPAN_INC * i).y();
+
                 double x1 = sp.get(1 + SPAN_INC * i).x();
                 double y1 = sp.get(1 + SPAN_INC * i).y();
+
                 double x2 = sp.get(2 + SPAN_INC * i).x();
                 double y2 = sp.get(2 + SPAN_INC * i).y();
+
                 double x3 = sp.get(3 + SPAN_INC * i).x();
                 double y3 = sp.get(3 + SPAN_INC * i).y();
                 c.setCurve(x0, y0, x1, y1, x2, y2, x3, y3);

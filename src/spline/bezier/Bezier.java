@@ -3,7 +3,7 @@ package spline.bezier;
 import java.util.ArrayList;
 import java.util.List;
 
-import pair.Pair;
+import math.geom2d.Point2D;
 import spline.mvc.Model;
 
 public class Bezier extends Model {
@@ -12,7 +12,7 @@ public class Bezier extends Model {
 
     private int              spanIdGen    = 0;
     private List<Span>       spans        = new ArrayList<Span>();
-    private List<Pair>       ctrlPts      = new ArrayList<Pair>();
+    private List<Point2D>    ctrlPts      = new ArrayList<Point2D>();
     private int              knotCount;
     private int              spanCount;
     private final static int PTS_PER_SPAN = 4;
@@ -31,11 +31,11 @@ public class Bezier extends Model {
         this.spans = spans;
     }
 
-    public Bezier(List<Pair> ctrlPts) {
+    public Bezier(List<Point2D> ctrlPts) {
         setCtrlPts(ctrlPts);
     }
 
-    public void setCtrlPts(List<Pair> ctrlPts) {
+    public void setCtrlPts(List<Point2D> ctrlPts) {
         this.ctrlPts = ctrlPts;
         this.spanCount = (ctrlPts.size() - 1) / (PTS_PER_SPAN - 1);
         this.knotCount = spanCount + 1;
@@ -44,7 +44,7 @@ public class Bezier extends Model {
         initSpans();
     }
 
-    public void init(List<Pair> ctrlPts, int knotCount) {
+    public void init(List<Point2D> ctrlPts, int knotCount) {
         this.ctrlPts = ctrlPts;
         this.knotCount = knotCount;
         this.spanCount = knotCount - 1;
@@ -59,7 +59,7 @@ public class Bezier extends Model {
         // Fill the point count list with empty pairs
         int ptCount = (PTS_PER_SPAN - 1) * spanCount + 1;
         for (int i = 0; i < ptCount; i++) {
-            ctrlPts.add(new Pair());
+            ctrlPts.add(new Point2D());
         }
     }
 
@@ -68,13 +68,15 @@ public class Bezier extends Model {
     }
 
     public void setNextX(double x) {
-        ctrlPts.get(nextX).x(x);
+        double y = ctrlPts.get(nextX).getY();
+        ctrlPts.set(nextX, new Point2D(x, y));
         nextX++;
         initSpans();
     }
 
     public void setNextY(double y) {
-        ctrlPts.get(nextY).y(y);
+        double x = ctrlPts.get(nextY).getX();
+        ctrlPts.set(nextY, new Point2D(x, y));
         nextY++;
         initSpans();
     }
@@ -104,7 +106,7 @@ public class Bezier extends Model {
             Span prevSpan = i == 0 ? null : spans.get(i - 1);
 
             // Extract the proper subset of control points for this span
-            Pair[] spanPts = new Pair[SPAN_PT_CT];
+            Point2D[] spanPts = new Point2D[SPAN_PT_CT];
             for (int j = 0; j < SPAN_PT_CT; j++) {
                 spanPts[j] = ctrlPts.get(j + i * INC);
             }
@@ -190,7 +192,7 @@ public class Bezier extends Model {
         return spans.get(which);
     }
 
-    List<Pair> getCtrlPts() {
+    List<Point2D> getCtrlPts() {
         return ctrlPts;
     }
 
@@ -203,20 +205,20 @@ public class Bezier extends Model {
      *         A list of points representing all segments of the initialized
      *         Bezier curve
      */
-    public List<Pair> getCurvePoints(int points) {
-        List<Pair> ret = new ArrayList<Pair>();
+    public List<Point2D> getCurvePoints(int points) {
+        List<Point2D> ret = new ArrayList<Point2D>();
 
         double increment = getStopX() / points;
         for (int i = 0; i <= points; i++) {
             double x = i * increment;
             double y = positionAtX(x);
-            ret.add(new Pair(x, y));
+            ret.add(new Point2D(x, y));
         }
         return ret;
     }
 
-    public List<Pair> getScaledCurvePoints(int points) {
-        List<Pair> pts = getCurvePoints(points);
+    public List<Point2D> getScaledCurvePoints(int points) {
+        List<Point2D> pts = getCurvePoints(points);
         double minX = getStartX();
         double rangeX = getStopX() - minX;
         double minY = getMinY();
@@ -225,14 +227,18 @@ public class Bezier extends Model {
         int signX = minX > 0 ? -1 : 1;
         int signY = minY > 0 ? -1 : 1;
 
-        for (Pair p : pts) {
+        for (int i = 0; i < pts.size(); i++) {
+            Point2D p = pts.get(i);
+
             // Move the X start and min Y values to 0
-            p.x(p.x() + minX * signX);
-            p.y(p.y() + minY * signY);
+            double x = (p.getX() + minX * signX);
+            double y = (p.getY() + minY * signY);
 
             // Scale the values based on the spline range
-            p.x(p.x() / rangeX);
-            p.y(p.y() / rangeY);
+            x /= rangeX;
+            y /= rangeY;
+
+            pts.set(i, new Point2D(x, y));
         }
         return pts;
     }
@@ -263,12 +269,12 @@ public class Bezier extends Model {
         private int              id;
         private Span             nextSpan;
         private Span             prevSpan;
-        private Pair             coeffA;
-        private Pair             coeffB;
-        private Pair             coeffC;
-        private Pair             coeffD;
+        private Point2D          coeffA;
+        private Point2D          coeffB;
+        private Point2D          coeffC;
+        private Point2D          coeffD;
         private int              recursionIndex;
-        private Pair[]           ctrlPts      = new Pair[4];
+        private Point2D[]        ctrlPts      = new Point2D[4];
         private final static int SEARCH_COUNT = 500;
 
         /**
@@ -281,14 +287,14 @@ public class Bezier extends Model {
         /**
          * 
          * @param ctrlPts
-         *            An array of size 4 of Pair objects representing the
+         *            An array of size 4 of Point2D objects representing the
          *            control point locations
          * @param prevSpan
          *            A reference to the previous span to which this span is
          *            attached. If this is the first span in a Bezier, set
          *            prevSpan to null.
          */
-        public Span(Pair[] ctrlPts, Span prevSpan) {
+        public Span(Point2D[] ctrlPts, Span prevSpan) {
             id = spanIdGen++;
             recursionIndex = 0;
             this.nextSpan = null;
@@ -322,16 +328,19 @@ public class Bezier extends Model {
         private void setCoeffs() {
 
             // A = (-pt0) + (3 * pt1) + (-3 * pt2) + pt3
-            coeffA = Pair.add((ctrlPts[0].negate()), (Pair.mult(ctrlPts[1], 3)));
-            coeffA = Pair.add(coeffA, Pair.mult(ctrlPts[2], -3));
-            coeffA = Pair.add(coeffA, ctrlPts[3]);
+            coeffA = ctrlPts[0].scale(-1);
+            coeffA = coeffA.plus(ctrlPts[1].scale(3));
+            coeffA = coeffA.plus(ctrlPts[2].scale(-3));
+            coeffA = coeffA.plus(ctrlPts[3]);
 
             // B = (3 * pt0) + (-6 * pt1) + (3 * pt2)
-            coeffB = Pair.add(Pair.mult(ctrlPts[0], 3), Pair.mult(ctrlPts[1], -6));
-            coeffB = Pair.add(coeffB, Pair.mult(ctrlPts[2], 3));
+            coeffB = ctrlPts[0].scale(3);
+            coeffB = coeffB.plus(ctrlPts[1].scale(-6));
+            coeffB = coeffB.plus(ctrlPts[2].scale(3));
 
             // C = (-3 * pt0) + (3 * pt1)
-            coeffC = Pair.add(Pair.mult(ctrlPts[0], -3), Pair.mult(ctrlPts[1], 3));
+            coeffC = ctrlPts[0].scale(-3);
+            coeffC = coeffC.plus(ctrlPts[1].scale(3));
 
             // D = pt0
             coeffD = ctrlPts[0];
@@ -343,42 +352,51 @@ public class Bezier extends Model {
 
         public double solveCubic(double t, boolean isX, double offset) {
             double ret;
-            int which = isX ? 0 : 1;
 
             // P(t) = At^3 + Bt^2 + Ct + D
             // Calculate via Horner's rule
+            double A = isX ? coeffD.getX() : coeffA.getY();
+            double B = isX ? coeffB.getX() : coeffB.getY();
+            double C = isX ? coeffC.getX() : coeffC.getY();
+            double D = isX ? coeffD.getX() : coeffD.getY();
+
             double term = t;
-            ret = coeffD.getVal(which) - offset;
-            ret += term * coeffC.getVal(which);
+            ret = D - offset;
+            ret += term * C;
             term *= t;
-            ret += term * coeffB.getVal(which);
+            ret += term * B;
             term *= t;
-            ret += term * coeffA.getVal(which);
+            ret += term * A;
             return ret;
 
         }
 
         public double solveCubicPrime(double t, boolean isX) {
             double ret;
-            int which = isX ? 0 : 1;
+
+            double A = isX ? coeffD.getX() : coeffA.getY();
+            double B = isX ? coeffB.getX() : coeffB.getY();
+            double C = isX ? coeffC.getX() : coeffC.getY();
 
             // P'(t) = 3At^2 + 2Bt + C
             // Calculate via Horner's rule
             double term = t;
-            ret = coeffC.getVal(which);
-            ret += term * coeffB.getVal(which) * 2;
+            ret = C;
+            ret += term * B * 2;
             term *= t;
-            ret += term * coeffA.getVal(which) * 3;
+            ret += term * A * 3;
             return ret;
         }
 
         public double solveCubicDoublePrime(double t, boolean isX) {
             double ret;
-            int which = isX ? 0 : 1;
+
+            double A = isX ? coeffD.getX() : coeffA.getY();
+            double B = isX ? coeffB.getX() : coeffB.getY();
 
             // P'(t) = 6At + 2B
             double term = t;
-            ret = 6 * coeffA.getVal(which) * term + 2 * coeffB.getVal(which);
+            ret = 6 * A * term + 2 * B;
             return ret;
         }
 
