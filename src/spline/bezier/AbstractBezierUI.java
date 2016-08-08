@@ -19,6 +19,16 @@ public abstract class AbstractBezierUI extends JPanel {
     static final int PTS_PER_SPAN = 4;
     Bezier           model;
 
+    /**
+     * This enum type represents the different types of control points composing
+     * a cubic Bezier curve. The first and fourth points, through which the
+     * spline curve passes are knots. The second point is the
+     * "leading control point" and the third point is the
+     * "trailing control point".
+     * 
+     * @author Michael
+     *
+     */
     static enum PtTyp {
         KNOT, LEAD_CTRL, TRAIL_CTRL, INVALID_TYP;
     }
@@ -27,9 +37,8 @@ public abstract class AbstractBezierUI extends JPanel {
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent arg0) {
-                if (model != null) {
-                    model.updatePx();
-                }
+                // Inform the model of the new UI size
+                updateModel();
             }
         });
         addMouseMotionListener(new MouseMotionAdapter() {
@@ -42,7 +51,6 @@ public abstract class AbstractBezierUI extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 onCtrlPt(e);
-                System.out.println("Selected point " + selectedPt);
             }
 
             @Override
@@ -54,11 +62,27 @@ public abstract class AbstractBezierUI extends JPanel {
         });
     }
 
+    /**
+     * Attaches a Bezier object model to this view and updates the model with
+     * information about the view.
+     * 
+     * @param model
+     *            A Bezier object
+     */
     void setModel(Bezier model) {
         this.model = model;
         model.setView(this);
     }
 
+    /**
+     * This method returns the type of point currently selected. Knots are the
+     * points through which the ends of each span pass, while control points may
+     * be defined as leading and trailing, indicating whether they are in front
+     * of the first knot or behind the second knot. If no point is selected, an
+     * invalid type enum is returned.
+     * 
+     * @return The type of point currently selected.
+     */
     private PtTyp selectedPointType() {
         int typ = selectedPt % 3;
         switch (typ) {
@@ -73,14 +97,32 @@ public abstract class AbstractBezierUI extends JPanel {
         }
     }
 
+    /**
+     * @return The radius in px of the drawn circles representing control points
+     */
     public int getPointRad() {
         return pointRad;
     }
 
+    /**
+     * Sets the radius in px of the drawn circles representing control points
+     * 
+     * @param rad
+     *            Size in px
+     */
     public void setPointRad(int rad) {
         pointRad = rad;
     }
 
+    /**
+     * This method returns the integer value of a mouse point that is currently
+     * clicked.
+     * 
+     * @param e
+     *            A mouse click event
+     * @return Which point the mouse has just clicked. Returns -1 if no point is
+     *         clicked.
+     */
     int onCtrlPt(MouseEvent e) {
         int index = 0;
         for (CtrlPt p : model.getCtrlPts()) {
@@ -91,9 +133,17 @@ public abstract class AbstractBezierUI extends JPanel {
             index++;
         }
         selectedPt = -1;
+        System.out.println("Selected point " + selectedPt);
         return selectedPt;
     }
 
+    /**
+     * Updates the positions of knots and control points as they are dragged by
+     * the mouse.
+     * 
+     * @param e
+     *            A mouse drag event
+     */
     void dragPoint(MouseEvent e) {
 
         // Update knot
@@ -200,55 +250,105 @@ public abstract class AbstractBezierUI extends JPanel {
         repaint();
     }
 
+    /**
+     * @return The minimum graph X value
+     */
     public int minX() {
         return minX;
     }
 
+    /**
+     * Sets the minimum graph X value and informs the model of the change
+     * 
+     * @param minX
+     */
     public void setMinX(int minX) {
         this.minX = minX;
         updateModel();
     }
 
+    /**
+     * @return The maximum graph X value
+     */
     public int maxX() {
         return maxX;
     }
 
+    /**
+     * Sets the maximum graph X value and informs the model of the change
+     * 
+     * @param maxX
+     */
     public void setMaxX(int maxX) {
         this.maxX = maxX;
         updateModel();
     }
 
+    /**
+     * @return The minimum graph Y value
+     */
     public int minY() {
         return minY;
     }
 
+    /**
+     * Sets the minimum graph Y value and informs the model of the change
+     * 
+     * @param minY
+     */
     public void setMinY(int minY) {
         this.minY = minY;
         updateModel();
     }
 
+    /**
+     * @return The maximum graph Y value
+     */
     public int maxY() {
         return maxY;
     }
 
+    /**
+     * Sets the maximum graph Y value and informs the model of the change
+     * 
+     * @param maxY
+     */
     public void setMaxY(int maxY) {
         this.maxY = maxY;
         updateModel();
     }
 
+    /**
+     * @return The difference between the maximum and minimum X Values
+     */
     public int rangeX() {
         return maxX - minX;
     }
 
+    /**
+     * @return The difference between the maximum and minimum Y Values
+     */
     public int rangeY() {
         return maxY - minY;
     }
 
+    /**
+     * Informs the model of a change in view parameters that requires updating
+     * the model's pixel locations
+     */
     private void updateModel() {
         if (model != null)
             model.updatePx();
     }
 
+    /**
+     * A concrete implementation of this abstract class must implement the
+     * paintComponent method in order to display the control points and / or
+     * Bezier curve in some way.
+     * 
+     * @param g
+     *            An inherited Graphics object
+     */
     @Override
     abstract public void paintComponent(Graphics g);
 }
