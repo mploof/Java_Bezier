@@ -161,7 +161,8 @@ public class Dialog extends JDialog {
         ctrlPts.add(new Point2D(60, 60));
         ctrlPts.add(new Point2D(75, 75));
         ctrlPts.add(new Point2D(80, 80));
-        bezier = new Bezier(ctrlPts, graph);
+        bezier = new Bezier(ctrlPts);
+        graph.setModel(bezier);
     }
 
 }

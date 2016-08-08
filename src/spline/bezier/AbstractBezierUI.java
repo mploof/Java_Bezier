@@ -1,9 +1,11 @@
 package spline.bezier;
 
 import java.awt.Graphics;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.event.MouseMotionAdapter;
 
 import javax.swing.JPanel;
 
@@ -11,7 +13,6 @@ import math.geom2d.Point2D;
 import math.geom2d.Vector2D;
 
 public abstract class AbstractBezierUI extends JPanel {
-    List<CtrlPt>     ctrlPts      = new ArrayList<CtrlPt>();
     int              minX, maxX, minY, maxY;
     int              pointRad     = 5;
     int              selectedPt;
@@ -22,8 +23,40 @@ public abstract class AbstractBezierUI extends JPanel {
         KNOT, LEAD_CTRL, TRAIL_CTRL, INVALID_TYP;
     }
 
+    public AbstractBezierUI() {
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent arg0) {
+                if (model != null) {
+                    model.updatePx();
+                }
+            }
+        });
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                dragPoint(e);
+            }
+        });
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                onCtrlPt(e);
+                System.out.println("Selected point " + selectedPt);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent arg0) {
+                if (model != null)
+                    model.updateVals();
+                selectedPt = -1;
+            }
+        });
+    }
+
     void setModel(Bezier model) {
         this.model = model;
+        model.setView(this);
     }
 
     private PtTyp selectedPointType() {
@@ -50,7 +83,7 @@ public abstract class AbstractBezierUI extends JPanel {
 
     int onCtrlPt(MouseEvent e) {
         int index = 0;
-        for (CtrlPt p : ctrlPts) {
+        for (CtrlPt p : model.getCtrlPts()) {
             if (p.mouseDistance(e) <= pointRad) {
                 selectedPt = index;
                 return selectedPt;
@@ -82,7 +115,7 @@ public abstract class AbstractBezierUI extends JPanel {
     private void updateKnot(MouseEvent e) {
 
         // Fetch the knot, find new location, and motion vector
-        CtrlPt pt = ctrlPts.get(selectedPt);
+        CtrlPt pt = model.getCtrlPts().get(selectedPt);
         Point2D newLocation = new Point2D(e.getX(), e.getY());
         Vector2D v = new Vector2D(pt.getLocation(), newLocation);
 
@@ -91,13 +124,13 @@ public abstract class AbstractBezierUI extends JPanel {
 
         // If not the first knot, move the trailing control point
         if (selectedPt > 0) {
-            CtrlPt c0 = ctrlPts.get(selectedPt - 1);
+            CtrlPt c0 = model.getCtrlPts().get(selectedPt - 1);
             Point2D newLoc = c0.getLocation().plus(v);
             c0.setLocation(newLoc);
         }
         // If not the last knot, move the leading control point
-        if (selectedPt != ctrlPts.size() - 1) {
-            CtrlPt c1 = ctrlPts.get(selectedPt + 1);
+        if (selectedPt != model.getCtrlPts().size() - 1) {
+            CtrlPt c1 = model.getCtrlPts().get(selectedPt + 1);
             Point2D newLoc = c1.getLocation().plus(v);
             c1.setLocation(newLoc);
         }
@@ -116,13 +149,13 @@ public abstract class AbstractBezierUI extends JPanel {
     private void updateControlPoint(MouseEvent e) {
 
         // Fetch the control point update it with the new location
-        CtrlPt pt = ctrlPts.get(selectedPt);
+        CtrlPt pt = model.getCtrlPts().get(selectedPt);
         Point2D newLocation = new Point2D(e.getX(), e.getY());
         pt.setLocation(newLocation);
 
         // Check whether an opposing control point needs adjustment
         boolean leadAdj = (selectedPointType() == PtTyp.TRAIL_CTRL
-                && selectedPt != ctrlPts.size() - 2) ? true : false;
+                && selectedPt != model.getCtrlPts().size() - 2) ? true : false;
         boolean trailAdj = (selectedPointType() == PtTyp.LEAD_CTRL
                 && selectedPt != 1) ? true : false;
 
@@ -137,8 +170,8 @@ public abstract class AbstractBezierUI extends JPanel {
 
             // Is leading control point, adjust trailing control point
             if (trailAdj) {
-                c0 = ctrlPts.get(selectedPt - 2).getLocation();
-                k = ctrlPts.get(selectedPt - 1).getLocation();
+                c0 = model.getCtrlPts().get(selectedPt - 2).getLocation();
+                k = model.getCtrlPts().get(selectedPt - 1).getLocation();
                 c1 = newLocation;
                 rho = Point2D.distance(c0, k);
                 theta = new Vector2D(c1, k).angle();
@@ -147,8 +180,8 @@ public abstract class AbstractBezierUI extends JPanel {
             // Is trailing control point, adjust leading control point
             else {
                 c0 = newLocation;
-                k = ctrlPts.get(selectedPt + 1).getLocation();
-                c1 = ctrlPts.get(selectedPt + 2).getLocation();
+                k = model.getCtrlPts().get(selectedPt + 1).getLocation();
+                c1 = model.getCtrlPts().get(selectedPt + 2).getLocation();
                 rho = Point2D.distance(c1, k);
                 theta = new Vector2D(c0, k).angle();
             }
@@ -160,7 +193,7 @@ public abstract class AbstractBezierUI extends JPanel {
             Vector2D oppV = Vector2D.createPolar(rho, theta);
             int adjPt = selectedPt + 2 * sign;
             System.out.println("selPt: " + selectedPt + " adjPt: " + adjPt);
-            ctrlPts.get(adjPt).setLocation(k.plus(oppV));
+            model.getCtrlPts().get(adjPt).setLocation(k.plus(oppV));
         }
 
         // Update the view
@@ -173,7 +206,7 @@ public abstract class AbstractBezierUI extends JPanel {
 
     public void setMinX(int minX) {
         this.minX = minX;
-        repaint();
+        updateModel();
     }
 
     public int maxX() {
@@ -182,7 +215,7 @@ public abstract class AbstractBezierUI extends JPanel {
 
     public void setMaxX(int maxX) {
         this.maxX = maxX;
-        repaint();
+        updateModel();
     }
 
     public int minY() {
@@ -191,7 +224,7 @@ public abstract class AbstractBezierUI extends JPanel {
 
     public void setMinY(int minY) {
         this.minY = minY;
-        repaint();
+        updateModel();
     }
 
     public int maxY() {
@@ -200,7 +233,7 @@ public abstract class AbstractBezierUI extends JPanel {
 
     public void setMaxY(int maxY) {
         this.maxY = maxY;
-        repaint();
+        updateModel();
     }
 
     public int rangeX() {
@@ -209,6 +242,11 @@ public abstract class AbstractBezierUI extends JPanel {
 
     public int rangeY() {
         return maxY - minY;
+    }
+
+    private void updateModel() {
+        if (model != null)
+            model.updatePx();
     }
 
     @Override

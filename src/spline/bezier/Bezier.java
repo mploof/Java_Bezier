@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import math.geom2d.Point2D;
-import spline.mvc.Model;
 
-public class Bezier extends Model {
+public class Bezier {
 
     private double           ERROR        = -1e6f;
 
@@ -43,8 +42,8 @@ public class Bezier extends Model {
 
     public void setView(AbstractBezierUI view) {
         this.view = view;
-        for(CtrlPt p : ctrlPts){
-            p.set
+        for (CtrlPt p : ctrlPts) {
+            p.setView(view);
         }
     }
 
@@ -64,6 +63,8 @@ public class Bezier extends Model {
         this.knotCount = spanCount + 1;
         nextX = ctrlPts.size();
         nextY = ctrlPts.size();
+
+        initSpans();
     }
 
     public void init(List<CtrlPt> ctrlPts, int knotCount) {
@@ -140,7 +141,9 @@ public class Bezier extends Model {
             spans.add(newSpan);
         }
 
-        super.notifyObservers();
+        if (view != null) {
+            view.repaint();
+        }
     }
 
     public double positionAtX(double x) {
@@ -285,6 +288,18 @@ public class Bezier extends Model {
                 ret = val;
         }
         return ret;
+    }
+
+    public void updatePx() {
+        for (CtrlPt p : ctrlPts) {
+            p.updatePx();
+        }
+    }
+
+    public void updateVals() {
+        for (CtrlPt p : ctrlPts) {
+            p.updateVal();
+        }
     }
 
     private class Span {

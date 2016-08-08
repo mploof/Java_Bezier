@@ -26,20 +26,21 @@ public class CtrlPt {
 
     public void setView(AbstractBezierUI view) {
         this.view = view;
+        updatePx();
     }
 
     public void setXPx(int x) {
         if (view == null)
             return;
         this.location = new Point2D(x, location.y());
-        this.val = pxToVal(location);
+        updateVal();
     }
 
     public void setYPx(int y) {
         if (view == null)
             return;
         this.location = new Point2D(location.x(), y);
-        this.val = pxToVal(location);
+        updateVal();
     }
 
     public Point2D getLocation() {
@@ -62,25 +63,24 @@ public class CtrlPt {
      */
     public void setVal(Point2D val) {
         this.val = val;
-        this.location = valToPx(val);
-        if (view != null)
-            view.repaint();
+        updatePx();
     }
 
-    Point2D valToPx(Point2D p) {
+    void updatePx() {
         if (view == null)
-            return new Point2D(0, 0);
-        double x = (p.x() - view.minX()) / view.rangeX() * view.getWidth();
-        double y = (1.0 - (p.y() - view.minY()) / view.rangeY()) * view.getHeight();
-        return new Point2D(x, y);
+            return;
+        double x = (val.x() - view.minX()) / view.rangeX() * view.getWidth();
+        double y = (1.0 - (val.y() - view.minY()) / view.rangeY()) * view.getHeight();
+        this.location = new Point2D(x, y);
+        view.repaint();
     }
 
-    Point2D pxToVal(Point2D p) {
+    void updateVal() {
         if (view == null)
-            return new Point2D(0, 0);
-        double x = p.x() / view.getWidth() * view.rangeX() + view.minX();
-        double y = (1.0 - p.y() / view.getHeight()) * view.rangeY() + view.minY();
-        return new Point2D(x, y);
+            return;
+        double x = location.x() / view.getWidth() * view.rangeX() + view.minX();
+        double y = (1.0 - location.y() / view.getHeight()) * view.rangeY() + view.minY();
+        this.val = new Point2D(x, y);
     }
 
     int mouseDistance(MouseEvent e) {
