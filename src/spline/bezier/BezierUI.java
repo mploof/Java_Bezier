@@ -12,6 +12,7 @@ import java.awt.geom.Line2D;
 
 import math.geom2d.Point2D;
 
+@SuppressWarnings("serial")
 public class BezierUI extends AbstractBezierUI {
 
     BezierUI() {
@@ -31,7 +32,7 @@ public class BezierUI extends AbstractBezierUI {
         setMaxX(110);
         setMinY(-10);
         setMaxY(110);
-        selectedPt = -1;
+        selectedPt = null;
     }
 
     @Override
@@ -61,8 +62,8 @@ public class BezierUI extends AbstractBezierUI {
         // Draw the control points
         for (CtrlPt p : model.getCtrlPts()) {
             int dia = pointRad * 2;
-            Ellipse2D dot = new Ellipse2D.Double(p.getLocation().x() - pointRad,
-                    p.getLocation().y() - pointRad, dia, dia);
+            Ellipse2D dot = new Ellipse2D.Double(p.getPx().x() - pointRad,
+                    p.getPx().y() - pointRad, dia, dia);
             g2.draw(dot);
         }
         System.out.println("Control point count: " + model.getCtrlPts().size());
@@ -77,10 +78,10 @@ public class BezierUI extends AbstractBezierUI {
                 // create new CubicCurve2D.Double
                 CubicCurve2D c = new CubicCurve2D.Double();
                 // draw CubicCurve2D.Double with set coordinates
-                Point2D p0 = model.getCtrlPts().get(0 + SPAN_INC * i).getLocation();
-                Point2D p1 = model.getCtrlPts().get(1 + SPAN_INC * i).getLocation();
-                Point2D p2 = model.getCtrlPts().get(2 + SPAN_INC * i).getLocation();
-                Point2D p3 = model.getCtrlPts().get(3 + SPAN_INC * i).getLocation();
+                Point2D p0 = model.getCtrlPts().get(0 + SPAN_INC * i).getPx();
+                Point2D p1 = model.getCtrlPts().get(1 + SPAN_INC * i).getPx();
+                Point2D p2 = model.getCtrlPts().get(2 + SPAN_INC * i).getPx();
+                Point2D p3 = model.getCtrlPts().get(3 + SPAN_INC * i).getPx();
                 c.setCurve(p0.x(), p0.y(), p1.x(), p1.y(), p2.x(), p2.y(), p3.x(), p3.y());
                 Stroke s = new BasicStroke(3);
                 g2.setStroke(s);
@@ -89,6 +90,8 @@ public class BezierUI extends AbstractBezierUI {
 
                 Line2D l = new Line2D.Double();
                 g2.setColor(Color.cyan);
+                s = new BasicStroke(1);
+                g2.setStroke(s);
                 l.setLine(p0.x(), p0.y(), p1.x(), p1.y());
                 g2.draw(l);
                 l.setLine(p3.x(), p3.y(), p2.x(), p2.y());

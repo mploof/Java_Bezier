@@ -11,27 +11,16 @@ import javax.swing.JPanel;
 
 import math.geom2d.Point2D;
 import math.geom2d.Vector2D;
+import spline.bezier.CtrlPt.PtTyp;
 
+@SuppressWarnings("serial")
 public abstract class AbstractBezierUI extends JPanel {
+
     int              minX, maxX, minY, maxY;
     int              pointRad     = 5;
-    int              selectedPt;
     static final int PTS_PER_SPAN = 4;
     Bezier           model;
-
-    /**
-     * This enum type represents the different types of control points composing
-     * a cubic Bezier curve. The first and fourth points, through which the
-     * spline curve passes are knots. The second point is the
-     * "leading control point" and the third point is the
-     * "trailing control point".
-     * 
-     * @author Michael
-     *
-     */
-    static enum PtTyp {
-        KNOT, LEAD_CTRL, TRAIL_CTRL, INVALID_TYP;
-    }
+    CtrlPt           selectedPt;
 
     public AbstractBezierUI() {
         addComponentListener(new ComponentAdapter() {
@@ -57,7 +46,7 @@ public abstract class AbstractBezierUI extends JPanel {
             public void mouseReleased(MouseEvent arg0) {
                 if (model != null)
                     model.updateVals();
-                selectedPt = -1;
+                selectedPt = null;
             }
         });
     }
@@ -84,17 +73,10 @@ public abstract class AbstractBezierUI extends JPanel {
      * @return The type of point currently selected.
      */
     private PtTyp selectedPointType() {
-        int typ = selectedPt % 3;
-        switch (typ) {
-        case 0:
-            return PtTyp.KNOT;
-        case 1:
-            return PtTyp.LEAD_CTRL;
-        case 2:
-            return PtTyp.TRAIL_CTRL;
-        default:
-            return PtTyp.INVALID_TYP;
-        }
+        if (selectedPt == null)
+            return CtrlPt.PtTyp.INVALID_TYP;
+        else
+            return selectedPt.getType();
     }
 
     /**
@@ -115,8 +97,8 @@ public abstract class AbstractBezierUI extends JPanel {
     }
 
     /**
-     * This method returns the integer value of a mouse point that is currently
-     * clicked.
+     * This method returns the integer value of a control point that the mouse
+     * is currently near.
      * 
      * @param e
      *            A mouse click event
@@ -124,17 +106,19 @@ public abstract class AbstractBezierUI extends JPanel {
      *         clicked.
      */
     int onCtrlPt(MouseEvent e) {
-        int index = 0;
-        for (CtrlPt p : model.getCtrlPts()) {
-            if (p.mouseDistance(e) <= pointRad) {
-                selectedPt = index;
-                return selectedPt;
+        if (model != null) {
+            int index = 0;
+            for (CtrlPt p : model.getCtrlPts()) {
+                if (p.mouseDistance(e) <= pointRad) {
+                    selectedPt = p;
+                    System.out.println("Selected point " + model.getCtrlPts().indexOf(selectedPt));
+                    return index;
+                }
+                index++;
             }
-            index++;
         }
-        selectedPt = -1;
-        System.out.println("Selected point " + selectedPt);
-        return selectedPt;
+        selectedPt = null;
+        return -1;
     }
 
     /**
@@ -145,7 +129,7 @@ public abstract class AbstractBezierUI extends JPanel {
      *            A mouse drag event
      */
     void dragPoint(MouseEvent e) {
-
+        System.out.println("Dragging point");
         // Update knot
         if (selectedPointType() == PtTyp.KNOT) {
             updateKnot(e);
@@ -164,24 +148,26 @@ public abstract class AbstractBezierUI extends JPanel {
      */
     private void updateKnot(MouseEvent e) {
 
-        // Fetch the knot, find new location, and motion vector
-        CtrlPt pt = model.getCtrlPts().get(selectedPt);
+        // Don't update a locked point
+        if (selectedPt.isPxLocked()) {
+            return;
+        }
         Point2D newLocation = new Point2D(e.getX(), e.getY());
-        Vector2D v = new Vector2D(pt.getLocation(), newLocation);
+        Vector2D v = new Vector2D(selectedPt.getPx(), newLocation);
 
         // Update the knot with the new location
-        pt.setLocation(newLocation);
+        selectedPt.setLocation(newLocation);
 
         // If not the first knot, move the trailing control point
-        if (selectedPt > 0) {
-            CtrlPt c0 = model.getCtrlPts().get(selectedPt - 1);
-            Point2D newLoc = c0.getLocation().plus(v);
+        if (!selectedPt.isFirstKnot()) {
+            CtrlPt c0 = selectedPt.getPrevCtrlPt();
+            Point2D newLoc = c0.getPx().plus(v);
             c0.setLocation(newLoc);
         }
         // If not the last knot, move the leading control point
-        if (selectedPt != model.getCtrlPts().size() - 1) {
-            CtrlPt c1 = model.getCtrlPts().get(selectedPt + 1);
-            Point2D newLoc = c1.getLocation().plus(v);
+        if (!selectedPt.isLastKnot()) {
+            CtrlPt c1 = selectedPt.getNextCtrlPt();
+            Point2D newLoc = c1.getPx().plus(v);
             c1.setLocation(newLoc);
         }
 
@@ -198,16 +184,33 @@ public abstract class AbstractBezierUI extends JPanel {
      */
     private void updateControlPoint(MouseEvent e) {
 
-        // Fetch the control point update it with the new location
-        CtrlPt pt = model.getCtrlPts().get(selectedPt);
-        Point2D newLocation = new Point2D(e.getX(), e.getY());
-        pt.setLocation(newLocation);
+        // Update point location, so long as it's not locked
+        if (selectedPt.isPxLocked())
+            return;
+        Point2D newLoc = new Point2D(e.getX(), e.getY());
+        // Bound the new location between surrounding knots
+        if (!selectedPt.isFirstKnot() && newLoc.x() < selectedPt.getPrevKnot().getPx().x())
+            newLoc = new Point2D(selectedPt.getPrevKnot().getPx().x(), newLoc.y());
+        if (!selectedPt.isLastKnot() && newLoc.x() > selectedPt.getNextKnot().getPx().x())
+            newLoc = new Point2D(selectedPt.getNextKnot().getPx().x(), newLoc.y());
+        selectedPt.setLocation(newLoc);
 
         // Check whether an opposing control point needs adjustment
-        boolean leadAdj = (selectedPointType() == PtTyp.TRAIL_CTRL
-                && selectedPt != model.getCtrlPts().size() - 2) ? true : false;
-        boolean trailAdj = (selectedPointType() == PtTyp.LEAD_CTRL
-                && selectedPt != 1) ? true : false;
+        PtTyp type = selectedPointType();
+        boolean leadAdj = false;
+        boolean trailAdj = false;
+
+        /*
+         * If the point's associated knot does not require continuous velocity,
+         * we're done, otherwise check to make sure it's not the first or last
+         * control point
+         */
+        if (type == PtTyp.TRAIL_CTRL && selectedPt.getNextKnot().isContVel()) {
+            leadAdj = !selectedPt.isLastTrail();
+        }
+        else if (type == PtTyp.LEAD_CTRL && selectedPt.getPrevKnot().isContVel()) {
+            trailAdj = !selectedPt.isFirstLead();
+        }
 
         // Adjust the opposite control point if necessary
         if (leadAdj || trailAdj) {
@@ -216,24 +219,25 @@ public abstract class AbstractBezierUI extends JPanel {
             Point2D c1;
             double rho;
             double theta;
-            int sign = 1;
 
             // Is leading control point, adjust trailing control point
+            CtrlPt adjPt;
             if (trailAdj) {
-                c0 = model.getCtrlPts().get(selectedPt - 2).getLocation();
-                k = model.getCtrlPts().get(selectedPt - 1).getLocation();
-                c1 = newLocation;
+                c0 = selectedPt.getPrevCtrlPt().getPx();
+                k = selectedPt.getPrevKnot().getPx();
+                c1 = newLoc;
                 rho = Point2D.distance(c0, k);
                 theta = new Vector2D(c1, k).angle();
-                sign = -1;
+                adjPt = selectedPt.getPrevCtrlPt();
             }
             // Is trailing control point, adjust leading control point
             else {
-                c0 = newLocation;
-                k = model.getCtrlPts().get(selectedPt + 1).getLocation();
-                c1 = model.getCtrlPts().get(selectedPt + 2).getLocation();
+                c0 = newLoc;
+                k = selectedPt.getNextKnot().getPx();
+                c1 = selectedPt.getNextCtrlPt().getPx();
                 rho = Point2D.distance(c1, k);
                 theta = new Vector2D(c0, k).angle();
+                adjPt = selectedPt.getNextCtrlPt();
             }
 
             /*
@@ -241,9 +245,10 @@ public abstract class AbstractBezierUI extends JPanel {
              * point location and update the proper point
              */
             Vector2D oppV = Vector2D.createPolar(rho, theta);
-            int adjPt = selectedPt + 2 * sign;
-            System.out.println("selPt: " + selectedPt + " adjPt: " + adjPt);
-            model.getCtrlPts().get(adjPt).setLocation(k.plus(oppV));
+            System.out.println("selPt: " + model.getCtrlPts().indexOf(selectedPt) + " adjPt: " + adjPt);
+            Point2D newOppPtLocation = k.plus(oppV);
+
+            adjPt.setLocation(newOppPtLocation);
         }
 
         // Update the view
