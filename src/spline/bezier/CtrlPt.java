@@ -9,19 +9,42 @@ public class CtrlPt {
     AbstractBezierUI view;
     Point2D          location;
     Point2D          val;
+    boolean          pxLocked;
+    boolean          contVel;
+    PtTyp            type;
+    CtrlPt           nextPt;
+    CtrlPt           prevPt;
+
+    /**
+     * This enum type represents the different types of control points composing
+     * a cubic Bezier curve. The first and fourth points, through which the
+     * spline curve passes are knots. The second point is the
+     * "leading control point" and the third point is the
+     * "trailing control point".
+     * 
+     * @author Michael
+     *
+     */
+    static public enum PtTyp {
+        KNOT, LEAD_CTRL, TRAIL_CTRL, INVALID_TYP;
+    }
 
     CtrlPt(Point2D val) {
         this.val = val;
         this.view = null;
+        this.type = PtTyp.INVALID_TYP;
     }
 
     CtrlPt(AbstractBezierUI view) {
         this.view = view;
+        this.type = PtTyp.INVALID_TYP;
     }
 
-    CtrlPt(Point2D val, AbstractBezierUI view) {
+    CtrlPt(Point2D val, AbstractBezierUI view, CtrlPt pt) {
         this.view = view;
         this.setVal(val);
+        this.type = PtTyp.INVALID_TYP;
+        this.setPrevPt(pt);
     }
 
     public void setView(AbstractBezierUI view) {
@@ -30,25 +53,42 @@ public class CtrlPt {
     }
 
     public void setXPx(int x) {
-        if (view == null)
+        if (view == null || pxLocked)
             return;
         this.location = new Point2D(x, location.y());
         updateVal();
     }
 
     public void setYPx(int y) {
-        if (view == null)
+        if (view == null || pxLocked)
             return;
         this.location = new Point2D(location.x(), y);
         updateVal();
     }
 
-    public Point2D getLocation() {
+    public void setContVel(boolean continuous) {
+        this.contVel = continuous;
+    }
+
+    public boolean isContVel() {
+        return contVel;
+    }
+
+    void setType(PtTyp type) {
+        this.type = type;
+    }
+
+    PtTyp getType() {
+        return type;
+    }
+
+    public Point2D getPx() {
         return location;
     }
 
     public void setLocation(Point2D location) {
-        this.location = location;
+        if (!pxLocked)
+            this.location = location;
     }
 
     public Point2D getVal() {
@@ -66,6 +106,11 @@ public class CtrlPt {
         updatePx();
     }
 
+    /**
+     * Updates the control point's pixel location, based upon the currently
+     * attached view, to reflect the current model value. If no view is
+     * attached, the method immediately returns.
+     */
     void updatePx() {
         if (view == null)
             return;
@@ -75,6 +120,11 @@ public class CtrlPt {
         view.repaint();
     }
 
+    /**
+     * Updates the control point's model value to reflect the current location
+     * in the attached view. If no view is attached, this method immediately
+     * returns.
+     */
     void updateVal() {
         if (view == null)
             return;
@@ -83,8 +133,146 @@ public class CtrlPt {
         this.val = new Point2D(x, y);
     }
 
+    /**
+     * Returns whether the control point's pixel location
+     * is locked. If it is locked, it may not be changed directly, but
+     * it may be updated by changing the model value. This allows for
+     * changes to the model by objects other than the attached view.
+     * 
+     * @return A boolean indicating the lock state.
+     */
+    boolean isPxLocked() {
+        return pxLocked;
+    }
+
+    /**
+     * Determines the distance of the mouse from the control point's pixel
+     * location
+     * 
+     * @param e
+     *            A mouse event
+     * @return The distance from the mouse event to the control point's pixel
+     *         location
+     */
     int mouseDistance(MouseEvent e) {
         Point2D p = new Point2D(e.getX(), e.getY());
         return (int) Math.round(Point2D.distance(p, this.location));
     }
+
+    // Linked list set and get methods
+
+    public void setNextPt(CtrlPt pt) {
+        this.nextPt = pt;
+    }
+
+    public CtrlPt getNextPt() {
+        return nextPt;
+    }
+
+    public void setPrevPt(CtrlPt pt) {
+        this.prevPt = pt;
+        if (this.prevPt != null)
+            prevPt.setNextPt(this);
+    }
+
+    public CtrlPt getPrevPt() {
+        return prevPt;
+    }
+
+    // Linked list navigation methods
+
+    public CtrlPt getNextKnot() {
+        CtrlPt p = this.getNextPt();
+        while (p != null) {
+            if (p.getType() == PtTyp.KNOT)
+                return p;
+            else
+                p = p.getNextPt();
+        }
+        return null;
+    }
+
+    public CtrlPt getPrevKnot() {
+        CtrlPt p = this.getPrevPt();
+        while (p != null) {
+            if (p.getType() == PtTyp.KNOT)
+                return p;
+            else
+                p = p.getPrevPt();
+        }
+        return null;
+    }
+
+    public CtrlPt getNextCtrlPt() {
+        CtrlPt p = this.getNextPt();
+        while (p != null) {
+            if (p.getType() == PtTyp.TRAIL_CTRL
+                    || p.getType() == PtTyp.LEAD_CTRL)
+                return p;
+            else
+                p = p.getNextPt();
+        }
+        return null;
+    }
+
+    public CtrlPt getPrevCtrlPt() {
+        CtrlPt p = this.getPrevPt();
+        while (p != null) {
+            if (p.getType() == PtTyp.TRAIL_CTRL
+                    || p.getType() == PtTyp.LEAD_CTRL)
+                return p;
+            else
+                p = p.getPrevPt();
+        }
+        return null;
+    }
+
+    public boolean isFirstLead() {
+        if (this.type != PtTyp.LEAD_CTRL)
+            return false;
+        CtrlPt p = this.getPrevPt();
+        while (p != null) {
+            if (p.type == PtTyp.LEAD_CTRL)
+                return false;
+            p = p.getPrevPt();
+        }
+        return true;
+    }
+
+    public boolean isLastTrail() {
+        if (this.type != PtTyp.TRAIL_CTRL)
+            return false;
+        CtrlPt p = this.getNextPt();
+        while (p != null) {
+            if (p.type == PtTyp.TRAIL_CTRL)
+                return false;
+            p = p.getNextPt();
+        }
+        return true;
+    }
+
+    public boolean isFirstKnot() {
+        if (this.type != PtTyp.KNOT)
+            return false;
+        CtrlPt p = this.getPrevPt();
+        while (p != null) {
+            if (p.type == PtTyp.KNOT)
+                return false;
+            p = p.getPrevPt();
+        }
+        return true;
+    }
+
+    public boolean isLastKnot() {
+        if (this.type != PtTyp.KNOT)
+            return false;
+        CtrlPt p = this.getNextPt();
+        while (p != null) {
+            if (p.type == PtTyp.KNOT)
+                return false;
+            p = p.getNextPt();
+        }
+        return true;
+    }
+
 }
