@@ -129,7 +129,6 @@ public abstract class AbstractBezierUI extends JPanel {
      *            A mouse drag event
      */
     void dragPoint(MouseEvent e) {
-        System.out.println("Dragging point");
         // Update knot
         if (selectedPointType() == PtTyp.KNOT) {
             updateKnot(e);
@@ -154,6 +153,7 @@ public abstract class AbstractBezierUI extends JPanel {
         }
         Point2D newLocation = new Point2D(e.getX(), e.getY());
         Vector2D v = new Vector2D(selectedPt.getPx(), newLocation);
+        System.out.println("X: " + newLocation.x() + " Y: " + newLocation.y());
 
         // Update the knot with the new location
         selectedPt.setLocation(newLocation);
@@ -188,12 +188,8 @@ public abstract class AbstractBezierUI extends JPanel {
         if (selectedPt.isPxLocked())
             return;
         Point2D newLoc = new Point2D(e.getX(), e.getY());
-        // Bound the new location between surrounding knots
-        if (!selectedPt.isFirstKnot() && newLoc.x() < selectedPt.getPrevKnot().getPx().x())
-            newLoc = new Point2D(selectedPt.getPrevKnot().getPx().x(), newLoc.y());
-        if (!selectedPt.isLastKnot() && newLoc.x() > selectedPt.getNextKnot().getPx().x())
-            newLoc = new Point2D(selectedPt.getNextKnot().getPx().x(), newLoc.y());
-        selectedPt.setLocation(newLoc);
+        newLoc = selectedPt.setLocation(newLoc);
+        System.out.println("X: " + newLoc.x() + " Y: " + newLoc.y());
 
         // Check whether an opposing control point needs adjustment
         PtTyp type = selectedPointType();
@@ -245,12 +241,11 @@ public abstract class AbstractBezierUI extends JPanel {
              * point location and update the proper point
              */
             Vector2D oppV = Vector2D.createPolar(rho, theta);
-            System.out.println("selPt: " + model.getCtrlPts().indexOf(selectedPt) + " adjPt: " + adjPt);
             Point2D newOppPtLocation = k.plus(oppV);
 
+            // Set the opposite point location
             adjPt.setLocation(newOppPtLocation);
         }
-
         // Update the view
         repaint();
     }

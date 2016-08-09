@@ -86,9 +86,18 @@ public class CtrlPt {
         return location;
     }
 
-    public void setLocation(Point2D location) {
-        if (!pxLocked)
-            this.location = location;
+    public Point2D setLocation(Point2D loc) {
+        if (pxLocked)
+            return this.location;
+
+        // Bound the point between any neighboring knots
+        if (!this.isFirstKnot() && loc.x() < this.getPrevKnot().getPx().x())
+            loc = new Point2D(this.getPrevKnot().getPx().x(), loc.y());
+        if (!this.isLastKnot() && loc.x() > this.getNextKnot().getPx().x())
+            loc = new Point2D(this.getNextKnot().getPx().x(), loc.y());
+
+        this.location = loc;
+        return this.location;
     }
 
     public Point2D getVal() {

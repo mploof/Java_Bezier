@@ -66,13 +66,11 @@ public class BezierUI extends AbstractBezierUI {
                     p.getPx().y() - pointRad, dia, dia);
             g2.draw(dot);
         }
-        System.out.println("Control point count: " + model.getCtrlPts().size());
 
         // Draw the spans
         final int SPAN_INC = PTS_PER_SPAN - 1;
         int spanCount = (model.getCtrlPts().size() - 1) / SPAN_INC;
 
-        System.out.println("Span count: " + spanCount);
         if (spanCount >= 1) {
             for (int i = 0; i < spanCount; i++) {
                 // create new CubicCurve2D.Double
