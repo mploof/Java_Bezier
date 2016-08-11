@@ -16,11 +16,13 @@ import spline.bezier.BezPt.PtTyp;
 @SuppressWarnings("serial")
 public abstract class AbstractBezierUI extends JPanel {
 
+    AbstractBezierUI thisUI       = this;
     int              minX, maxX, minY, maxY;
     int              pointRad     = 5;
     static final int PTS_PER_SPAN = 4;
-    Bezier           model;
-    BezPt           selectedPt;
+    Bezier           model        = null;
+    BezPt            selectedPt   = null;
+    int              scrubberPx   = 0;
 
     public AbstractBezierUI() {
         addComponentListener(new ComponentAdapter() {
@@ -33,19 +35,31 @@ public abstract class AbstractBezierUI extends JPanel {
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                dragPoint(e);
+                dragAction(e);
             }
         });
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                onCtrlPt(e);
+                // If no control point is selected, move the scrubber
+                if (onCtrlPt(e) == -1) {
+                    updateScrubber(e);
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent arg0) {
                 if (model != null)
                     model.updateVals();
+                if (selectedPt != null) {
+                    int modelRangeBuff = 10;
+                    if (selectedPt.getVal().y() > maxY) {
+                        thisUI.setMaxY((int) (selectedPt.getVal().y() + modelRangeBuff));
+                    }
+                    else if (selectedPt.getVal().y() < minY) {
+                        thisUI.setMinY((int) (selectedPt.getVal().y() - modelRangeBuff));
+                    }
+                }
                 selectedPt = null;
             }
         });
@@ -128,7 +142,7 @@ public abstract class AbstractBezierUI extends JPanel {
      * @param e
      *            A mouse drag event
      */
-    void dragPoint(MouseEvent e) {
+    void dragAction(MouseEvent e) {
         // Update knot
         if (selectedPointType() == PtTyp.KNOT) {
             updateKnot(e);
@@ -136,6 +150,10 @@ public abstract class AbstractBezierUI extends JPanel {
         // Update control point
         else if (selectedPointType() != PtTyp.INVALID_TYP) {
             updateControlPoint(e);
+        }
+        // Move the scrubber
+        else {
+            updateScrubber(e);
         }
     }
 
@@ -176,6 +194,17 @@ public abstract class AbstractBezierUI extends JPanel {
     }
 
     /**
+     * Updates the scrubber location
+     * 
+     * @param e
+     *            A MouseEvent
+     */
+    private void updateScrubber(MouseEvent e) {
+        scrubberPx = e.getX();
+        repaint();
+    }
+
+    /**
      * Update's a control point's location and the position of the opposite
      * control point.
      * 
@@ -207,6 +236,8 @@ public abstract class AbstractBezierUI extends JPanel {
         else if (type == PtTyp.LEAD_CTRL && selectedPt.getPrevKnot().isContVel()) {
             trailAdj = !selectedPt.isFirstLead();
         }
+
+        System.out.println(selectedPt);
 
         // Adjust the opposite control point if necessary
         if (leadAdj || trailAdj) {

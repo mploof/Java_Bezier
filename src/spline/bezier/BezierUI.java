@@ -67,6 +67,9 @@ public class BezierUI extends AbstractBezierUI {
             g2.draw(dot);
         }
 
+        Stroke s;
+        Line2D l = new Line2D.Double();;
+
         // Draw the spans
         final int SPAN_INC = PTS_PER_SPAN - 1;
         int spanCount = (model.getCtrlPts().size() - 1) / SPAN_INC;
@@ -81,12 +84,11 @@ public class BezierUI extends AbstractBezierUI {
                 Point2D p2 = model.getCtrlPts().get(2 + SPAN_INC * i).getPx();
                 Point2D p3 = model.getCtrlPts().get(3 + SPAN_INC * i).getPx();
                 c.setCurve(p0.x(), p0.y(), p1.x(), p1.y(), p2.x(), p2.y(), p3.x(), p3.y());
-                Stroke s = new BasicStroke(3);
+                s = new BasicStroke(3);
                 g2.setStroke(s);
                 g2.setColor(Color.RED);
                 g2.draw(c);
 
-                Line2D l = new Line2D.Double();
                 g2.setColor(Color.cyan);
                 s = new BasicStroke(1);
                 g2.setStroke(s);
@@ -96,6 +98,12 @@ public class BezierUI extends AbstractBezierUI {
                 g2.draw(l);
             }
         }
+
+        // Draw the scrubber
+        g2.setColor(Color.YELLOW);
+        s = new BasicStroke(3);
+        l.setLine(scrubberPx, 0, scrubberPx, this.getHeight());
+        g2.draw(l);
 
         // Draw a border around everything
         g2.setColor(Color.BLACK);
