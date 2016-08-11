@@ -14,6 +14,7 @@ public class CtrlPt {
     PtTyp            type;
     CtrlPt           nextPt;
     CtrlPt           prevPt;
+    int              pxBuff = 5;
 
     /**
      * This enum type represents the different types of control points composing
@@ -87,15 +88,47 @@ public class CtrlPt {
     }
 
     public Point2D setLocation(Point2D loc) {
-        if (pxLocked)
+        if (pxLocked || view == null)
             return this.location;
 
-        // Bound the point between any neighboring knots
-        if (!this.isFirstKnot() && loc.x() < this.getPrevKnot().getPx().x())
-            loc = new Point2D(this.getPrevKnot().getPx().x(), loc.y());
-        if (!this.isLastKnot() && loc.x() > this.getNextKnot().getPx().x())
-            loc = new Point2D(this.getNextKnot().getPx().x(), loc.y());
+        // Bound control points between neighboring knots
+        if (this.isCtrlPt()) {
+            if (!this.isFirstKnot() && loc.x() < this.getPrevKnot().getPx().x())
+                loc = new Point2D(this.getPrevKnot().getPx().x(), loc.y());
+            if (!this.isLastKnot() && loc.x() > this.getNextKnot().getPx().x())
+                loc = new Point2D(this.getNextKnot().getPx().x(), loc.y());
+        }
+        // Bound knots between neighboring knots with buffer, and also nudge any
+        // control points they run into
+        else if (this.isKnot()) {
+            // Bound first and last knots by view edges
+            if (this.isFirstKnot() && loc.x() < pxBuff)
+                loc = new Point2D(pxBuff, loc.y());
+            if (this.isLastKnot() && loc.x() > view.getWidth() - pxBuff)
+                loc = new Point2D(view.getWidth() - pxBuff, loc.y());
 
+            // Bound by other knots
+            if (!this.isFirstKnot() && loc.x() < this.getPrevKnot().getPx().x() + pxBuff)
+                loc = new Point2D(this.getPrevKnot().getPx().x() + pxBuff, loc.y());
+            if (!this.isLastKnot() && loc.x() > this.getNextKnot().getPx().x() - pxBuff)
+                loc = new Point2D(this.getNextKnot().getPx().x() - pxBuff, loc.y());
+
+            // Move nearby control points if necessary
+            Point2D ctrlLoc;
+            CtrlPt ctrlPt;
+            // If bumping into the previous lead control point
+            if (!this.isFirstKnot() && loc.x() < this.getPrevLeadPt().getPx().x() + pxBuff) {
+                ctrlPt = this.getPrevLeadPt();
+                ctrlLoc = new Point2D(loc.x() - pxBuff, ctrlPt.getPx().getY());
+                ctrlPt.setLocation(ctrlLoc);
+            }
+            // If bumping into the next trailing control point
+            if (!this.isLastKnot() && loc.x() > this.getNextTrailPt().getPx().x() - pxBuff) {
+                ctrlPt = this.getNextTrailPt();
+                ctrlLoc = new Point2D(loc.x() + pxBuff, ctrlPt.getPx().getY());
+                ctrlPt.setLocation(ctrlLoc);
+            }
+        }
         this.location = loc;
         return this.location;
     }
@@ -290,6 +323,13 @@ public class CtrlPt {
 
     public boolean isKnot() {
         if (this.type == PtTyp.KNOT)
+            return true;
+        else
+            return false;
+    }
+
+    public boolean isCtrlPt() {
+        if (this.isLeadPt() || this.isTrailPt())
             return true;
         else
             return false;
