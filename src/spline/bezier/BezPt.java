@@ -250,7 +250,7 @@ public class BezPt {
     }
 
     public boolean isFirstLead() {
-        if (this.type != PtTyp.KNOT || getPrevLeadPt() != null)
+        if (this.type != PtTyp.LEAD_CTRL || getPrevLeadPt() != null)
             return false;
         else
             return true;
