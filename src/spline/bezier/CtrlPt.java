@@ -143,10 +143,10 @@ public class CtrlPt {
     }
 
     /**
-     * Returns whether the control point's pixel location
-     * is locked. If it is locked, it may not be changed directly, but
-     * it may be updated by changing the model value. This allows for
-     * changes to the model by objects other than the attached view.
+     * Returns whether the control point's pixel location is locked. If it is
+     * locked, it may not be changed directly, but it may be updated by changing
+     * the model value. This allows for changes to the model by objects other
+     * than the attached view.
      * 
      * @return A boolean indicating the lock state.
      */
