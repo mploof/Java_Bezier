@@ -288,4 +288,25 @@ public class CtrlPt {
         return null;
     }
 
+    public boolean isKnot() {
+        if (this.type == PtTyp.KNOT)
+            return true;
+        else
+            return false;
+    }
+
+    public boolean isLeadPt() {
+        if (this.type == PtTyp.LEAD_CTRL)
+            return true;
+        else
+            return false;
+    }
+
+    public boolean isTrailPt() {
+        if (this.type == PtTyp.TRAIL_CTRL)
+            return true;
+        else
+            return false;
+    }
+
 }
