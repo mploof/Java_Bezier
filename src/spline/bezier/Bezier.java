@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import math.geom2d.Point2D;
-import spline.bezier.CtrlPt.PtTyp;
+import spline.bezier.BezPt.PtTyp;
 
 public class Bezier {
 
     private double           ERROR        = -1e6f;
 
     private List<Span>       spans        = new ArrayList<Span>();
-    private List<CtrlPt>     ctrlPts      = new ArrayList<CtrlPt>();
+    private List<BezPt>     ctrlPts      = new ArrayList<BezPt>();
     private int              knotCount;
     private int              spanCount;
     private final static int PTS_PER_SPAN = 4;
@@ -49,7 +49,7 @@ public class Bezier {
 
     public void setView(AbstractBezierUI view) {
         this.view = view;
-        for (CtrlPt p : ctrlPts) {
+        for (BezPt p : ctrlPts) {
             p.setView(view);
         }
     }
@@ -67,10 +67,10 @@ public class Bezier {
 
         for (int i = 0; i < ctrlPtVals.size(); i++) {
             if (i == 0) {
-                ctrlPts.add(new CtrlPt(ctrlPtVals.get(i), view, null));
+                ctrlPts.add(new BezPt(ctrlPtVals.get(i), view, null));
             }
             else {
-                ctrlPts.add(new CtrlPt(ctrlPtVals.get(i), view, ctrlPts.get(i - 1)));
+                ctrlPts.add(new BezPt(ctrlPtVals.get(i), view, ctrlPts.get(i - 1)));
             }
         }
         this.spanCount = (ctrlPts.size() - 1) / (PTS_PER_SPAN - 1);
@@ -80,7 +80,7 @@ public class Bezier {
 
         // Set the point types
         for (int i = 0; i < ctrlPts.size(); i++) {
-            CtrlPt p = ctrlPts.get(i);
+            BezPt p = ctrlPts.get(i);
             switch (i % 3) {
             case 0:
                 p.setType(PtTyp.KNOT);
@@ -107,7 +107,7 @@ public class Bezier {
         // Fill the point count list with empty pairs
         int ptCount = (PTS_PER_SPAN - 1) * spanCount + 1;
         for (int i = 0; i < ptCount; i++) {
-            ctrlPts.add(new CtrlPt(view));
+            ctrlPts.add(new BezPt(view));
         }
     }
 
@@ -116,7 +116,7 @@ public class Bezier {
     }
 
     public void setNextX(double x) {
-        CtrlPt p = ctrlPts.get(nextX);
+        BezPt p = ctrlPts.get(nextX);
         double y = p.getVal().y();
         p.setVal(new Point2D(x, y));
         nextX++;
@@ -124,7 +124,7 @@ public class Bezier {
     }
 
     public void setNextY(double y) {
-        CtrlPt p = ctrlPts.get(nextY);
+        BezPt p = ctrlPts.get(nextY);
         double x = p.getVal().x();
         p.setVal(new Point2D(x, y));
         nextY++;
@@ -156,7 +156,7 @@ public class Bezier {
             Span prevSpan = i == 0 ? null : spans.get(i - 1);
 
             // Extract the proper subset of control points for this span
-            CtrlPt[] spanPts = new CtrlPt[SPAN_PT_CT];
+            BezPt[] spanPts = new BezPt[SPAN_PT_CT];
             for (int j = 0; j < SPAN_PT_CT; j++) {
                 spanPts[j] = ctrlPts.get(j + i * INC);
             }
@@ -254,7 +254,7 @@ public class Bezier {
     /**
      * @return A list of the Bezier's control points
      */
-    List<CtrlPt> getCtrlPts() {
+    List<BezPt> getCtrlPts() {
         return ctrlPts;
     }
 
@@ -311,7 +311,7 @@ public class Bezier {
      * Updates each control point's graphical pixel location
      */
     public void updatePx() {
-        for (CtrlPt p : ctrlPts) {
+        for (BezPt p : ctrlPts) {
             p.updatePx();
         }
     }
@@ -321,7 +321,7 @@ public class Bezier {
      * value and the attached view parameters
      */
     public void updateVals() {
-        for (CtrlPt p : ctrlPts) {
+        for (BezPt p : ctrlPts) {
             p.updateVal();
         }
     }
@@ -347,7 +347,7 @@ public class Bezier {
          *            attached. If this is the first span in a Bezier, set
          *            prevSpan to null.
          */
-        public Span(CtrlPt[] ctrlPts, Span prevSpan) {
+        public Span(BezPt[] ctrlPts, Span prevSpan) {
             recursionIndex = 0;
             for (int i = 0; i < ctrlPts.length; i++) {
                 this.ctrlPts[i] = ctrlPts[i].getVal();

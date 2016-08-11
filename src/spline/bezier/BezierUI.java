@@ -60,7 +60,7 @@ public class BezierUI extends AbstractBezierUI {
         }
 
         // Draw the control points
-        for (CtrlPt p : model.getCtrlPts()) {
+        for (BezPt p : model.getCtrlPts()) {
             int dia = pointRad * 2;
             Ellipse2D dot = new Ellipse2D.Double(p.getPx().x() - pointRad,
                     p.getPx().y() - pointRad, dia, dia);

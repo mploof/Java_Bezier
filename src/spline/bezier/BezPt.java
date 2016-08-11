@@ -4,7 +4,7 @@ import java.awt.event.MouseEvent;
 
 import math.geom2d.Point2D;
 
-public class CtrlPt {
+public class BezPt {
 
     AbstractBezierUI view;
     Point2D          location;
@@ -12,8 +12,8 @@ public class CtrlPt {
     boolean          pxLocked;
     boolean          contVel;
     PtTyp            type;
-    CtrlPt           nextPt;
-    CtrlPt           prevPt;
+    BezPt           nextPt;
+    BezPt           prevPt;
     int              pxBuff = 5;
 
     /**
@@ -30,18 +30,18 @@ public class CtrlPt {
         KNOT, LEAD_CTRL, TRAIL_CTRL, INVALID_TYP;
     }
 
-    CtrlPt(Point2D val) {
+    BezPt(Point2D val) {
         this.val = val;
         this.view = null;
         this.type = PtTyp.INVALID_TYP;
     }
 
-    CtrlPt(AbstractBezierUI view) {
+    BezPt(AbstractBezierUI view) {
         this.view = view;
         this.type = PtTyp.INVALID_TYP;
     }
 
-    CtrlPt(Point2D val, AbstractBezierUI view, CtrlPt pt) {
+    BezPt(Point2D val, AbstractBezierUI view, BezPt pt) {
         this.view = view;
         this.setVal(val);
         this.type = PtTyp.INVALID_TYP;
@@ -115,7 +115,7 @@ public class CtrlPt {
 
             // Move nearby control points if necessary
             Point2D ctrlLoc;
-            CtrlPt ctrlPt;
+            BezPt ctrlPt;
             // If bumping into the previous lead control point
             if (!this.isFirstKnot() && loc.x() < this.getPrevLeadPt().getPx().x() + pxBuff) {
                 ctrlPt = this.getPrevLeadPt();
@@ -203,49 +203,49 @@ public class CtrlPt {
 
     // Linked list set and get methods
 
-    public void setNextPt(CtrlPt pt) {
+    public void setNextPt(BezPt pt) {
         this.nextPt = pt;
     }
 
-    public CtrlPt getNextPt() {
+    public BezPt getNextPt() {
         return nextPt;
     }
 
-    public void setPrevPt(CtrlPt pt) {
+    public void setPrevPt(BezPt pt) {
         this.prevPt = pt;
         if (this.prevPt != null)
             prevPt.setNextPt(this);
     }
 
-    public CtrlPt getPrevPt() {
+    public BezPt getPrevPt() {
         return prevPt;
     }
 
     // Linked list navigation methods
 
-    public CtrlPt getNextKnot() {
+    public BezPt getNextKnot() {
         return getNextPtTyp(PtTyp.KNOT);
     }
 
-    public CtrlPt getPrevKnot() {
+    public BezPt getPrevKnot() {
         return getPrevPtTyp(PtTyp.KNOT);
     }
 
-    public CtrlPt getNextLeadPt() {
+    public BezPt getNextLeadPt() {
         return getNextPtTyp(PtTyp.LEAD_CTRL);
 
     }
 
-    public CtrlPt getPrevLeadPt() {
+    public BezPt getPrevLeadPt() {
         return getPrevPtTyp(PtTyp.LEAD_CTRL);
 
     }
 
-    public CtrlPt getNextTrailPt() {
+    public BezPt getNextTrailPt() {
         return getNextPtTyp(PtTyp.TRAIL_CTRL);
     }
 
-    public CtrlPt getPrevTrailPt() {
+    public BezPt getPrevTrailPt() {
         return getPrevPtTyp(PtTyp.TRAIL_CTRL);
     }
 
@@ -277,8 +277,8 @@ public class CtrlPt {
             return true;
     }
 
-    public CtrlPt getNextCtrlPt() {
-        CtrlPt p = this.getNextPt();
+    public BezPt getNextCtrlPt() {
+        BezPt p = this.getNextPt();
         while (p != null) {
             if (p.getType() == PtTyp.TRAIL_CTRL || p.getType() == PtTyp.LEAD_CTRL)
                 return p;
@@ -288,8 +288,8 @@ public class CtrlPt {
         return null;
     }
 
-    public CtrlPt getPrevCtrlPt() {
-        CtrlPt p = this.getPrevPt();
+    public BezPt getPrevCtrlPt() {
+        BezPt p = this.getPrevPt();
         while (p != null) {
             if (p.getType() == PtTyp.TRAIL_CTRL || p.getType() == PtTyp.LEAD_CTRL)
                 return p;
@@ -299,8 +299,8 @@ public class CtrlPt {
         return null;
     }
 
-    public CtrlPt getNextPtTyp(PtTyp typ) {
-        CtrlPt p = this.getNextPt();
+    public BezPt getNextPtTyp(PtTyp typ) {
+        BezPt p = this.getNextPt();
         while (p != null) {
             if (p.getType() == typ)
                 return p;
@@ -310,8 +310,8 @@ public class CtrlPt {
         return null;
     }
 
-    public CtrlPt getPrevPtTyp(PtTyp typ) {
-        CtrlPt p = this.getPrevPt();
+    public BezPt getPrevPtTyp(PtTyp typ) {
+        BezPt p = this.getPrevPt();
         while (p != null) {
             if (p.getType() == typ)
                 return p;

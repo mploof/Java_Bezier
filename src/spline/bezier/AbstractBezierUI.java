@@ -11,7 +11,7 @@ import javax.swing.JPanel;
 
 import math.geom2d.Point2D;
 import math.geom2d.Vector2D;
-import spline.bezier.CtrlPt.PtTyp;
+import spline.bezier.BezPt.PtTyp;
 
 @SuppressWarnings("serial")
 public abstract class AbstractBezierUI extends JPanel {
@@ -20,7 +20,7 @@ public abstract class AbstractBezierUI extends JPanel {
     int              pointRad     = 5;
     static final int PTS_PER_SPAN = 4;
     Bezier           model;
-    CtrlPt           selectedPt;
+    BezPt           selectedPt;
 
     public AbstractBezierUI() {
         addComponentListener(new ComponentAdapter() {
@@ -74,7 +74,7 @@ public abstract class AbstractBezierUI extends JPanel {
      */
     private PtTyp selectedPointType() {
         if (selectedPt == null)
-            return CtrlPt.PtTyp.INVALID_TYP;
+            return BezPt.PtTyp.INVALID_TYP;
         else
             return selectedPt.getType();
     }
@@ -108,7 +108,7 @@ public abstract class AbstractBezierUI extends JPanel {
     int onCtrlPt(MouseEvent e) {
         if (model != null) {
             int index = 0;
-            for (CtrlPt p : model.getCtrlPts()) {
+            for (BezPt p : model.getCtrlPts()) {
                 if (p.mouseDistance(e) <= pointRad) {
                     selectedPt = p;
                     System.out.println("Selected point " + model.getCtrlPts().indexOf(selectedPt));
@@ -160,13 +160,13 @@ public abstract class AbstractBezierUI extends JPanel {
 
         // If not the first knot, move the trailing control point
         if (!selectedPt.isFirstKnot()) {
-            CtrlPt c0 = selectedPt.getPrevCtrlPt();
+            BezPt c0 = selectedPt.getPrevCtrlPt();
             Point2D newLoc = c0.getPx().plus(v);
             c0.setLocation(newLoc);
         }
         // If not the last knot, move the leading control point
         if (!selectedPt.isLastKnot()) {
-            CtrlPt c1 = selectedPt.getNextCtrlPt();
+            BezPt c1 = selectedPt.getNextCtrlPt();
             Point2D newLoc = c1.getPx().plus(v);
             c1.setLocation(newLoc);
         }
@@ -217,7 +217,7 @@ public abstract class AbstractBezierUI extends JPanel {
             double theta;
 
             // Is leading control point, adjust trailing control point
-            CtrlPt adjPt;
+            BezPt adjPt;
             if (trailAdj) {
                 c0 = selectedPt.getPrevCtrlPt().getPx();
                 k = selectedPt.getPrevKnot().getPx();
