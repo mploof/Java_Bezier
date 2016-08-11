@@ -7,13 +7,13 @@ import math.geom2d.Point2D;
 public class BezPt {
 
     AbstractBezierUI view;
-    Point2D          location;
+    Point2D          px;
     Point2D          val;
     boolean          pxLocked;
     boolean          contVel;
     PtTyp            type;
-    BezPt           nextPt;
-    BezPt           prevPt;
+    BezPt            nextPt;
+    BezPt            prevPt;
     int              pxBuff = 5;
 
     /**
@@ -56,14 +56,14 @@ public class BezPt {
     public void setXPx(int x) {
         if (view == null || pxLocked)
             return;
-        this.location = new Point2D(x, location.y());
+        this.px = new Point2D(x, px.y());
         updateVal();
     }
 
     public void setYPx(int y) {
         if (view == null || pxLocked)
             return;
-        this.location = new Point2D(location.x(), y);
+        this.px = new Point2D(px.x(), y);
         updateVal();
     }
 
@@ -84,12 +84,12 @@ public class BezPt {
     }
 
     public Point2D getPx() {
-        return location;
+        return px;
     }
 
     public Point2D setLocation(Point2D loc) {
         if (pxLocked || view == null)
-            return this.location;
+            return this.px;
 
         // Bound control points between neighboring knots
         if (this.isCtrlPt()) {
@@ -129,8 +129,8 @@ public class BezPt {
                 ctrlPt.setLocation(ctrlLoc);
             }
         }
-        this.location = loc;
-        return this.location;
+        this.px = loc;
+        return this.px;
     }
 
     public Point2D getVal() {
@@ -139,7 +139,7 @@ public class BezPt {
 
     /**
      * Sets the control point actual value. When this method is called, the
-     * pixel location is updated and the observing view is updated.
+     * pixel value is updated and the observing view is updated.
      * 
      * @param val
      */
@@ -149,7 +149,7 @@ public class BezPt {
     }
 
     /**
-     * Updates the control point's pixel location, based upon the currently
+     * Updates the control point's pixel value, based upon the currently
      * attached view, to reflect the current model value. If no view is
      * attached, the method immediately returns.
      */
@@ -158,25 +158,25 @@ public class BezPt {
             return;
         double x = (val.x() - view.minX()) / view.rangeX() * view.getWidth();
         double y = (1.0 - (val.y() - view.minY()) / view.rangeY()) * view.getHeight();
-        this.location = new Point2D(x, y);
+        this.px = new Point2D(x, y);
         view.repaint();
     }
 
     /**
-     * Updates the control point's model value to reflect the current location
+     * Updates the control point's model value to reflect the current px
      * in the attached view. If no view is attached, this method immediately
      * returns.
      */
     void updateVal() {
         if (view == null)
             return;
-        double x = location.x() / view.getWidth() * view.rangeX() + view.minX();
-        double y = (1.0 - location.y() / view.getHeight()) * view.rangeY() + view.minY();
+        double x = px.x() / view.getWidth() * view.rangeX() + view.minX();
+        double y = (1.0 - px.y() / view.getHeight()) * view.rangeY() + view.minY();
         this.val = new Point2D(x, y);
     }
 
     /**
-     * Returns whether the control point's pixel location is locked. If it is
+     * Returns whether the control point's pixel value is locked. If it is
      * locked, it may not be changed directly, but it may be updated by changing
      * the model value. This allows for changes to the model by objects other
      * than the attached view.
@@ -189,16 +189,16 @@ public class BezPt {
 
     /**
      * Determines the distance of the mouse from the control point's pixel
-     * location
+     * px
      * 
      * @param e
      *            A mouse event
      * @return The distance from the mouse event to the control point's pixel
-     *         location
+     *         px
      */
     int mouseDistance(MouseEvent e) {
         Point2D p = new Point2D(e.getX(), e.getY());
-        return (int) Math.round(Point2D.distance(p, this.location));
+        return (int) Math.round(Point2D.distance(p, this.px));
     }
 
     // Linked list set and get methods
