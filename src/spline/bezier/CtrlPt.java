@@ -191,32 +191,63 @@ public class CtrlPt {
     // Linked list navigation methods
 
     public CtrlPt getNextKnot() {
-        CtrlPt p = this.getNextPt();
-        while (p != null) {
-            if (p.getType() == PtTyp.KNOT)
-                return p;
-            else
-                p = p.getNextPt();
-        }
-        return null;
+        return getNextPtTyp(PtTyp.KNOT);
     }
 
     public CtrlPt getPrevKnot() {
-        CtrlPt p = this.getPrevPt();
-        while (p != null) {
-            if (p.getType() == PtTyp.KNOT)
-                return p;
-            else
-                p = p.getPrevPt();
-        }
-        return null;
+        return getPrevPtTyp(PtTyp.KNOT);
+    }
+
+    public CtrlPt getNextLeadPt() {
+        return getNextPtTyp(PtTyp.LEAD_CTRL);
+
+    }
+
+    public CtrlPt getPrevLeadPt() {
+        return getPrevPtTyp(PtTyp.LEAD_CTRL);
+
+    }
+
+    public CtrlPt getNextTrailPt() {
+        return getNextPtTyp(PtTyp.TRAIL_CTRL);
+    }
+
+    public CtrlPt getPrevTrailPt() {
+        return getPrevPtTyp(PtTyp.TRAIL_CTRL);
+    }
+
+    public boolean isFirstLead() {
+        if (this.type != PtTyp.KNOT || getPrevLeadPt() != null)
+            return false;
+        else
+            return true;
+    }
+
+    public boolean isLastTrail() {
+        if (this.type != PtTyp.TRAIL_CTRL || getNextTrailPt() != null)
+            return false;
+        else
+            return true;
+    }
+
+    public boolean isFirstKnot() {
+        if (this.type != PtTyp.KNOT || getPrevKnot() != null)
+            return false;
+        else
+            return true;
+    }
+
+    public boolean isLastKnot() {
+        if (this.type != PtTyp.KNOT || getNextKnot() != null)
+            return false;
+        else
+            return true;
     }
 
     public CtrlPt getNextCtrlPt() {
         CtrlPt p = this.getNextPt();
         while (p != null) {
-            if (p.getType() == PtTyp.TRAIL_CTRL
-                    || p.getType() == PtTyp.LEAD_CTRL)
+            if (p.getType() == PtTyp.TRAIL_CTRL || p.getType() == PtTyp.LEAD_CTRL)
                 return p;
             else
                 p = p.getNextPt();
@@ -227,8 +258,7 @@ public class CtrlPt {
     public CtrlPt getPrevCtrlPt() {
         CtrlPt p = this.getPrevPt();
         while (p != null) {
-            if (p.getType() == PtTyp.TRAIL_CTRL
-                    || p.getType() == PtTyp.LEAD_CTRL)
+            if (p.getType() == PtTyp.TRAIL_CTRL || p.getType() == PtTyp.LEAD_CTRL)
                 return p;
             else
                 p = p.getPrevPt();
@@ -236,52 +266,26 @@ public class CtrlPt {
         return null;
     }
 
-    public boolean isFirstLead() {
-        if (this.type != PtTyp.LEAD_CTRL)
-            return false;
-        CtrlPt p = this.getPrevPt();
-        while (p != null) {
-            if (p.type == PtTyp.LEAD_CTRL)
-                return false;
-            p = p.getPrevPt();
-        }
-        return true;
-    }
-
-    public boolean isLastTrail() {
-        if (this.type != PtTyp.TRAIL_CTRL)
-            return false;
+    public CtrlPt getNextPtTyp(PtTyp typ) {
         CtrlPt p = this.getNextPt();
         while (p != null) {
-            if (p.type == PtTyp.TRAIL_CTRL)
-                return false;
-            p = p.getNextPt();
+            if (p.getType() == typ)
+                return p;
+            else
+                p = p.getNextPt();
         }
-        return true;
+        return null;
     }
 
-    public boolean isFirstKnot() {
-        if (this.type != PtTyp.KNOT)
-            return false;
+    public CtrlPt getPrevPtTyp(PtTyp typ) {
         CtrlPt p = this.getPrevPt();
         while (p != null) {
-            if (p.type == PtTyp.KNOT)
-                return false;
-            p = p.getPrevPt();
+            if (p.getType() == typ)
+                return p;
+            else
+                p = p.getPrevPt();
         }
-        return true;
-    }
-
-    public boolean isLastKnot() {
-        if (this.type != PtTyp.KNOT)
-            return false;
-        CtrlPt p = this.getNextPt();
-        while (p != null) {
-            if (p.type == PtTyp.KNOT)
-                return false;
-            p = p.getNextPt();
-        }
-        return true;
+        return null;
     }
 
 }
