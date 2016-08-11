@@ -349,4 +349,9 @@ public class BezPt {
             return false;
     }
 
+    @Override
+    public String toString() {
+        return "Type: " + this.type + " xPX: " + px.x() + " yPx: " + px.y();
+    }
+
 }
