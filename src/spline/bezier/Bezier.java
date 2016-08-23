@@ -11,7 +11,7 @@ public class Bezier {
     private double           ERROR        = -1e6f;
 
     private List<Span>       spans        = new ArrayList<Span>();
-    private List<BezPt>     ctrlPts      = new ArrayList<BezPt>();
+    private List<BezPt>      ctrlPts      = new ArrayList<BezPt>();
     private int              knotCount;
     private int              spanCount;
     private final static int PTS_PER_SPAN = 4;
@@ -59,10 +59,13 @@ public class Bezier {
         return this.spans;
     }
 
-    public void setSpans(List<Span> spans) {
-        this.spans = spans;
-    }
-
+    /**
+     * Initializes the bezier curve's control points from a list of Point2D
+     * objects.
+     * 
+     * @param ctrlPtVals
+     *            A list of Point2D Objects
+     */
     public void setCtrlPtsFromPoint2D(List<Point2D> ctrlPtVals) {
 
         for (int i = 0; i < ctrlPtVals.size(); i++) {
@@ -131,6 +134,9 @@ public class Bezier {
         initSpans();
     }
 
+    /**
+     * Sets the span objects based on the current control points
+     */
     private void initSpans() {
 
         // Don't initialize the spans till all the control points have been set
